@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:mobile_app_project/services/auth_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -449,6 +452,69 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  // Helper: safely compute initials for display
+  String _displayInitials() {
+    final name = (_userProfile?.name ?? '').trim();
+    if (name.isEmpty) return '??';
+    final parts = name.split(RegExp(r'\s+'));
+    final first = parts.first;
+    if (first.length >= 2) return first.substring(0, 2).toUpperCase();
+    return first.substring(0, 1).toUpperCase();
+  }
+
+  // Helper: build ImageProvider for avatar, null-safe and handles relative path
+  ImageProvider<Object>? _avatarImageProvider() {
+    final avatar = _userProfile?.avatarUrl;
+    if (avatar == null || avatar.trim().isEmpty) return null;
+    // If backend returns a relative path like "/static/avatars/1.png", prefix baseUrl
+    if (avatar.startsWith('/')) {
+      return NetworkImage('${AuthService.baseUrl}$avatar');
+    }
+    return NetworkImage(avatar);
+  }
+
+  Future<void> _pickAndUploadAvatar() async {
+    if (_userId == null) return;
+    final picker = ImagePicker();
+    final XFile? file = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80,
+    );
+    if (file == null) return;
+
+    final bytes = await file.readAsBytes();
+    final base64Image = base64Encode(bytes);
+    // include data URI prefix so backend split(',') works if needed
+    final dataUri = 'data:image/png;base64,$base64Image';
+
+    final uploadedUrl = await _authService.uploadAvatar(_userId!, dataUri);
+    if (uploadedUrl != null) {
+      setState(() {
+        if (_userProfile != null) {
+          _userProfile = UserProfile(
+            id: _userProfile!.id,
+            email: _userProfile!.email,
+            name: _userProfile!.name,
+            location: _userProfile!.location,
+            cuisinePreferences: _userProfile!.cuisinePreferences,
+            budget: _userProfile!.budget,
+            dietaryRestrictions: _userProfile!.dietaryRestrictions,
+            notificationsEnabled: _userProfile!.notificationsEnabled,
+            darkModeEnabled: _userProfile!.darkModeEnabled,
+            avatarUrl: uploadedUrl,
+          );
+        }
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Avatar uploaded')));
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Failed to upload avatar')));
+    }
+  }
+
   Widget _buildHeader() {
     return Container(
       decoration: const BoxDecoration(
@@ -471,44 +537,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Mon Profil',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 24),
           Row(
             children: [
               Stack(
                 children: [
-                  Container(
-                    width: 96,
-                    height: 96,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.3),
-                        width: 4,
-                      ),
+                  GestureDetector(
+                    onTap: () => _pickAndUploadAvatar(),
+                    child: CircleAvatar(
+                      radius: 48,
+                      backgroundColor: Colors.white.withOpacity(0.2),
+                      backgroundImage: _avatarImageProvider(),
+                      child: _avatarImageProvider() == null
+                          ? Text(
+                              _displayInitials(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 32,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            )
+                          : null,
                     ),
-                    child: Center(
-                      child: Text(
-                        _userProfile?.name.isNotEmpty == true
-                            ? _userProfile!.name.substring(0, 2).toUpperCase()
-                            : '??',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
+                  ),
+                  Positioned(
+                    right: 0,
+                    bottom: 0,
+                    child: InkWell(
+                      onTap: () => _pickAndUploadAvatar(),
+                      child: CircleAvatar(
+                        radius: 16,
+                        backgroundColor: Colors.white,
+                        child: Icon(
+                          Icons.edit,
+                          size: 16,
+                          color: Theme.of(context).primaryColor,
                         ),
                       ),
                     ),
                   ),
-                  // ... existing edit button code ...
                 ],
               ),
               const SizedBox(width: 16),

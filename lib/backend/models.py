@@ -16,3 +16,4 @@ class UserProfile(BaseModel):
     dietary_restrictions: bool = False
     notifications_enabled: bool = True
     dark_mode_enabled: bool = False
+    avatar_url: str = "" 

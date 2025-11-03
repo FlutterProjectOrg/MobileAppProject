@@ -1,3 +1,4 @@
+import os
 import sqlite3
 
 def get_db():
@@ -5,6 +6,8 @@ def get_db():
     return conn
 
 def init_db():
+    os.makedirs("data", exist_ok=True)
+    os.makedirs("data/avatars", exist_ok=True)
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("""
@@ -25,8 +28,10 @@ def init_db():
             dietary_restrictions INTEGER DEFAULT 0,
             notifications_enabled INTEGER DEFAULT 1,
             dark_mode_enabled INTEGER DEFAULT 0,
+            avatar_url TEXT DEFAULT '',
             FOREIGN KEY (user_id) REFERENCES users (id)
         )
     """)
+    os.makedirs("data/avatars", exist_ok=True)
     conn.commit()
     conn.close()

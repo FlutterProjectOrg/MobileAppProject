@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
+
+from fastapi.staticfiles import StaticFiles
 from db import init_db
 from routes import auth,profile
 
@@ -9,7 +11,7 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(lifespan=lifespan)
-
+app.mount("/static", StaticFiles(directory="data"), name="static")
 # Inclure les routes
 app.include_router(auth.router)
 app.include_router(profile.router)

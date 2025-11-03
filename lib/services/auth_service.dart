@@ -104,6 +104,45 @@ class AuthService {
       return false;
     }
   }
+
+  Future<String?> uploadAvatar(int userId, String base64Image) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/profile/$userId/avatar'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'image_base64': base64Image}),
+      );
+      debugPrint('UploadProfile status: ${response.statusCode}');
+      debugPrint('UploadProfile body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        // defensive: ensure avatar_url exists and is string
+        final avatarPathRaw = data['avatar_url'];
+        if (avatarPathRaw == null) {
+          debugPrint('uploadAvatar: avatar_url missing in response');
+          return null;
+        }
+        final avatarPath = avatarPathRaw.toString();
+
+        // build reachable URL for emulator/device
+        final host = baseUrl; // baseUrl already set for emulator
+        final fullUrl = avatarPath.startsWith('http')
+            ? avatarPath
+            : '$host$avatarPath';
+        debugPrint('uploadAvatar -> $fullUrl');
+        return fullUrl;
+      } else {
+        debugPrint(
+          'uploadAvatar failed: ${response.statusCode} ${response.body}',
+        );
+      }
+      return null;
+    } catch (e, st) {
+      debugPrint('Upload avatar error: $e\n$st');
+      return null;
+    }
+  }
 }
 
 class UserProfile {
@@ -116,6 +155,7 @@ class UserProfile {
   final bool dietaryRestrictions;
   final bool notificationsEnabled;
   final bool darkModeEnabled;
+  final String avatarUrl;
 
   UserProfile({
     required this.id,
@@ -127,21 +167,24 @@ class UserProfile {
     this.dietaryRestrictions = false,
     this.notificationsEnabled = true,
     this.darkModeEnabled = false,
+    this.avatarUrl = '',
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
     return UserProfile(
-      id: json['id'] as int,
-      email: json['email'] as String,
-      name: json['name'] as String,
+      id: (json['id'] is int) ? json['id'] : int.tryParse('${json['id']}') ?? 0,
+      email: json['email'] as String? ?? '',
+      name: json['name'] as String? ?? '',
       location: json['location'] as String? ?? '',
       cuisinePreferences: List<String>.from(json['cuisine_preferences'] ?? []),
       budget: (json['budget'] as num?)?.toDouble() ?? 25.0,
       dietaryRestrictions: json['dietary_restrictions'] as bool? ?? false,
       notificationsEnabled: json['notifications_enabled'] as bool? ?? true,
       darkModeEnabled: json['dark_mode_enabled'] as bool? ?? false,
+      avatarUrl: json['avatar_url'] as String? ?? '',
     );
   }
+
   Map<String, dynamic> toJson() => {
     'id': id,
     'email': email,
@@ -152,5 +195,6 @@ class UserProfile {
     'dietary_restrictions': dietaryRestrictions,
     'notifications_enabled': notificationsEnabled,
     'dark_mode_enabled': darkModeEnabled,
+    'avatar_url': avatarUrl,
   };
 }

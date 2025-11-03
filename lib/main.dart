@@ -32,7 +32,7 @@ class MyApp extends StatelessWidget {
 }
 
 class AppScreen extends StatefulWidget {
-  const AppScreen({Key? key}) : super(key: key);
+  const AppScreen({super.key});
 
   @override
   State<AppScreen> createState() => _AppScreenState();

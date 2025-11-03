@@ -43,6 +43,7 @@ dependencies:
   provider: ^6.0.6
   overlay_support: ^2.0.5 
   shared_preferences: ^2.2.2
+  image_picker: ^1.2.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
