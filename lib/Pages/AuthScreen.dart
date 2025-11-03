@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_app_project/services/auth_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthScreen extends StatefulWidget {
   final VoidCallback onAuthenticated;
@@ -11,11 +13,12 @@ class AuthScreen extends StatefulWidget {
 
 class _AuthScreenState extends State<AuthScreen>
     with SingleTickerProviderStateMixin {
+  final _authService = AuthService();
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _nameController = TextEditingController();
-
+  bool _isLoading = false;
   bool _isSignup = false;
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
@@ -43,10 +46,40 @@ class _AuthScreenState extends State<AuthScreen>
     super.dispose();
   }
 
-  void _handleSubmit() {
+  int? userId;
+  Future<void> _handleSubmit() async {
     if (_formKey.currentState!.validate()) {
-      // Mock authentication
-      widget.onAuthenticated();
+      setState(() => _isLoading = true);
+
+      if (_isSignup) {
+        userId = await _authService.register(
+          _emailController.text,
+          _passwordController.text,
+          _nameController.text,
+        );
+        debugPrint('Registered user ID: $userId');
+      } else {
+        userId = await _authService.login(
+          _emailController.text,
+          _passwordController.text,
+        );
+      }
+
+      setState(() => _isLoading = false);
+
+      if (userId != null) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setInt('userId', userId!);
+
+        widget.onAuthenticated();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Authentication failed'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -274,7 +307,7 @@ class _AuthScreenState extends State<AuthScreen>
     return SizedBox(
       height: 48,
       child: ElevatedButton(
-        onPressed: _handleSubmit,
+        onPressed: _isLoading ? null : _handleSubmit,
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF3B82F6),
           foregroundColor: Colors.white,
@@ -283,10 +316,15 @@ class _AuthScreenState extends State<AuthScreen>
           ),
           elevation: 0,
         ),
-        child: Text(
-          _isSignup ? 'Créer un compte' : 'Se connecter',
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-        ),
+        child: _isLoading
+            ? const CircularProgressIndicator()
+            : Text(
+                _isSignup ? 'Créer un compte' : 'Se connecter',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
       ),
     );
   }

@@ -7,8 +7,11 @@ import 'package:mobile_app_project/Pages/HomeScreen.dart';
 import 'package:mobile_app_project/Pages/ProfileScreen.dart';
 import 'package:mobile_app_project/Pages/ReservationsScreen.dart';
 import 'package:mobile_app_project/Pages/RestaurantDetail.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await SharedPreferences.getInstance();
   runApp(OverlaySupport.global(child: MyApp()));
 }
 
