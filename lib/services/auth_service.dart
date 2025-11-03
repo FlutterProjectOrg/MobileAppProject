@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -7,7 +8,9 @@ class AuthService {
   factory AuthService() => _instance;
   AuthService._internal();
 
-  static const String baseUrl = 'http://10.0.2.2:8000';
+  static final String baseUrl =
+      dotenv.env['BASE_URL'] ?? 'http://10.0.2.2:8000';
+
   int? currentUserId;
   Future<int?> register(String email, String password, String? name) async {
     try {

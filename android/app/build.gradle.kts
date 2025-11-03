@@ -3,6 +3,8 @@ plugins {
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+    id("com.google.gms.google-services")
+    
 }
 
 android {
@@ -28,8 +30,17 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        resValue("string", "default_web_client_id", "461459606233-4v4098qv045ncn6sph1666v6scmn0mg2.apps.googleusercontent.com")
+     
     }
-
+    signingConfigs {
+        getByName("debug") {
+            storeFile = file("${System.getProperty("user.home")}/.android/debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+}
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.
@@ -37,6 +48,9 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
+}
+dependencies {
+    implementation("com.google.android.gms:play-services-auth:20.7.0")
 }
 
 flutter {

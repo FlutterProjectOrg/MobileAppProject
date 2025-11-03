@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_app_project/services/auth_service.dart';
+import 'package:mobile_app_project/services/google_auth_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -349,7 +350,7 @@ class _AuthScreenState extends State<AuthScreen>
     return SizedBox(
       height: 48,
       child: OutlinedButton.icon(
-        onPressed: widget.onAuthenticated,
+        onPressed: _handleGoogleSignIn,
         icon: Image.network(
           'https://www.google.com/favicon.ico',
           width: 20,
@@ -359,7 +360,7 @@ class _AuthScreenState extends State<AuthScreen>
           },
         ),
         label: const Text(
-          'Google',
+          'Continuer avec Google',
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
         style: OutlinedButton.styleFrom(
@@ -371,6 +372,31 @@ class _AuthScreenState extends State<AuthScreen>
         ),
       ),
     );
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    setState(() => _isLoading = true);
+
+    final googleAuth = GoogleAuthService();
+    final user = await googleAuth.signInWithGoogle();
+
+    setState(() => _isLoading = false);
+
+    if (user != null) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('userId', user['id']);
+      // await prefs.setString('userEmail', user['email']);
+      // await prefs.setString('userName', user['name'] ?? '');
+
+      widget.onAuthenticated();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Connexion Google annulée ou échouée'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   Widget _buildToggleSignup() {
