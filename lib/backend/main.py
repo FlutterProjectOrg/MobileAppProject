@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 
@@ -9,7 +10,7 @@ from routes import auth,profile
 async def lifespan(app: FastAPI):
     init_db()  # Crée les tables si elles n’existent pas
     yield
-
+os.makedirs("data/avatars", exist_ok=True)
 app = FastAPI(lifespan=lifespan)
 app.mount("/static", StaticFiles(directory="data"), name="static")
 # Inclure les routes

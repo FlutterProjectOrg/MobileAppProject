@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_app_project/services/auth_service.dart';
-import 'package:mobile_app_project/services/google_auth_service.dart';
+import 'package:mobile_app_project/services/Auth/auth_service.dart';
+import 'package:mobile_app_project/services/Auth/google_auth_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -24,6 +24,24 @@ class _AuthScreenState extends State<AuthScreen>
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
 
+  String selectedRole = 'user';
+  final Map<String, Map<String, dynamic>> roleOptions = {
+    'user': {
+      'label': 'Utilisateur',
+      'icon': Icons.person,
+      'description': 'Commander et découvrir',
+    },
+    'owner': {
+      'label': 'Propriétaire',
+      'icon': Icons.store,
+      'description': 'Gérer votre restaurant',
+    },
+    'delivery': {
+      'label': 'Livreur',
+      'icon': Icons.delivery_dining,
+      'description': 'Livrer les commandes',
+    },
+  };
   @override
   void initState() {
     super.initState();
@@ -57,8 +75,10 @@ class _AuthScreenState extends State<AuthScreen>
           _emailController.text,
           _passwordController.text,
           _nameController.text,
+          selectedRole,
         );
         debugPrint('Registered user ID: $userId');
+        debugPrint('Selected role: $selectedRole');
       } else {
         userId = await _authService.login(
           _emailController.text,
@@ -71,7 +91,8 @@ class _AuthScreenState extends State<AuthScreen>
       if (userId != null) {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setInt('userId', userId!);
-
+        final user = await _authService.getUserById(userId!);
+        await prefs.setString('role', user?.role ?? 'user');
         widget.onAuthenticated();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -238,6 +259,12 @@ class _AuthScreenState extends State<AuthScreen>
               return null;
             },
           ),
+          if (_isSignup) ...[
+            const SizedBox(height: 16),
+            _buildLabel('Type de compte'),
+            const SizedBox(height: 8),
+            _buildRoleDropdown(),
+          ],
           const SizedBox(height: 24),
           _buildSubmitButton(),
           const SizedBox(height: 24),
@@ -247,6 +274,114 @@ class _AuthScreenState extends State<AuthScreen>
           const SizedBox(height: 16),
           _buildToggleSignup(),
         ],
+      ),
+    );
+  }
+
+  Widget _buildRoleDropdown() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: DropdownButtonFormField<String>(
+        value: selectedRole,
+        decoration: InputDecoration(
+          prefixIcon: Icon(
+            roleOptions[selectedRole]!['icon'] as IconData,
+            color: Colors.grey[700],
+            size: 20,
+          ),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
+        ),
+        icon: Icon(Icons.keyboard_arrow_down, color: Colors.grey[600]),
+        dropdownColor: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        elevation: 8,
+        isExpanded: true,
+        style: const TextStyle(
+          fontSize: 16,
+          color: Color(0xFF1F2937),
+          fontWeight: FontWeight.w500,
+        ),
+        selectedItemBuilder: (BuildContext context) {
+          return roleOptions.entries.map((entry) {
+            return Row(
+              children: [
+                const SizedBox(width: 8),
+                Text(
+                  entry.value['label'] as String,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF1F2937),
+                  ),
+                ),
+              ],
+            );
+          }).toList();
+        },
+        items: roleOptions.entries.map((entry) {
+          return DropdownMenuItem<String>(
+            value: entry.key,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                children: [
+                  Icon(
+                    entry.value['icon'] as IconData,
+                    size: 22,
+                    color: Colors.grey[700],
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          entry.value['label'] as String,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF1F2937),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          entry.value['description'] as String,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                            fontWeight: FontWeight.normal,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }).toList(),
+        onChanged: (val) {
+          setState(() {
+            selectedRole = val ?? 'user';
+          });
+        },
+        validator: (value) {
+          if (_isSignup && (value == null || value.isEmpty)) {
+            return 'Veuillez sélectionner un type de compte';
+          }
+          return null;
+        },
       ),
     );
   }
@@ -385,8 +520,7 @@ class _AuthScreenState extends State<AuthScreen>
     if (user != null) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setInt('userId', user['id']);
-      // await prefs.setString('userEmail', user['email']);
-      // await prefs.setString('userName', user['name'] ?? '');
+      await prefs.setString('role', user['role']);
 
       widget.onAuthenticated();
     } else {

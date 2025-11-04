@@ -21,6 +21,7 @@ class GoogleAuthService {
         'email': account.email,
         'password': 'google_auth',
         'name': account.displayName ?? '',
+        'role': 'user',
       };
 
       final response = await http.post(
@@ -36,6 +37,7 @@ class GoogleAuthService {
           'id': data['id'],
           'email': data['email'] ?? userData['email'],
           'name': data['name'] ?? userData['name'],
+          'role': data['role'] ?? userData['role'],
         };
       } else if (response.statusCode == 400) {
         // Déjà enregistré → on tente un login direct
@@ -51,6 +53,7 @@ class GoogleAuthService {
             'id': data['id'],
             'email': data['email'],
             'name': data['name'],
+            'role': data['role'] ?? userData['role'],
           };
         }
       }
