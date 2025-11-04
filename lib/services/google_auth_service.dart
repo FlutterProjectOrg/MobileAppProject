@@ -10,8 +10,7 @@ class GoogleAuthService {
         '461459606233-4v4098qv045ncn6sph1666v6scmn0mg2.apps.googleusercontent.com',
     scopes: ['email', 'profile'],
   );
-  static final String baseUrl =
-      dotenv.env['BASE_URL'] ?? 'http://10.0.2.2:8000';
+  static final String baseUrl = dotenv.env['DB_URL'] ?? 'http://10.0.2.2:8000';
   Future<Map<String, dynamic>?> signInWithGoogle() async {
     try {
       await _googleSignIn.signOut();

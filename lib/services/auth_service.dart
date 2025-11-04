@@ -8,8 +8,7 @@ class AuthService {
   factory AuthService() => _instance;
   AuthService._internal();
 
-  static final String baseUrl =
-      dotenv.env['BASE_URL'] ?? 'http://10.0.2.2:8000';
+  static final String baseUrl = dotenv.env['DB_URL'] ?? 'http://10.0.2.2:8000';
 
   int? currentUserId;
   Future<int?> register(String email, String password, String? name) async {
