@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_app_project/Pages/Auth/ForgotPasswordDialog.dart';
 import 'package:mobile_app_project/services/Auth/auth_service.dart';
 import 'package:mobile_app_project/services/Auth/google_auth_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -27,7 +28,7 @@ class _AuthScreenState extends State<AuthScreen>
   String selectedRole = 'user';
   final Map<String, Map<String, dynamic>> roleOptions = {
     'user': {
-      'label': 'Utilisateur',
+      'label': 'Client',
       'icon': Icons.person,
       'description': 'Commander et découvrir',
     },
@@ -270,6 +271,22 @@ class _AuthScreenState extends State<AuthScreen>
           const SizedBox(height: 24),
           _buildDivider(),
           const SizedBox(height: 24),
+          TextButton(
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) => const ForgotPasswordDialog(),
+              );
+            },
+            child: const Text(
+              'Mot de passe oublié?',
+              style: TextStyle(
+                fontSize: 14,
+                color: Color(0xFF3B82F6),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
           _buildGoogleButton(),
           const SizedBox(height: 16),
           _buildToggleSignup(),

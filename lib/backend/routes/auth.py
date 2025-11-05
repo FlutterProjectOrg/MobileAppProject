@@ -3,50 +3,9 @@ import sqlite3
 from models import User
 from db import get_db
 import traceback
+from utils.security import hash_password,verify_password
 
 router = APIRouter(prefix="/auth", tags=["auth"])
-
-
-
-# @router.post("/register", status_code=status.HTTP_201_CREATED)
-# async def register(user: User):
-#     conn = get_db()
-#     cursor = conn.cursor()
-#     try:
-#         cursor.execute(
-#             "INSERT INTO users (email, password, name) VALUES (?, ?, ?)",
-#             (user.email, user.password, user.name)
-#         )
-#         conn.commit()
-#         user_id = cursor.lastrowid
-#         return {"message": "User registered successfully", "user_id": user_id}
-#     except sqlite3.IntegrityError:
-#         raise HTTPException(status_code=400, detail="Email already registered")
-#     except Exception:
-#         traceback.print_exc()
-#         raise HTTPException(status_code=500, detail="Internal Server Error")
-#     finally:
-#         conn.close()
-# @router.post("/login")
-# async def login(user: User):
-#     conn = get_db()
-#     cursor = conn.cursor()
-#     try:
-#         cursor.execute(
-#             "SELECT id FROM users WHERE email = ? AND password = ?",
-#             (user.email, user.password)
-#         )
-#         result = cursor.fetchone()
-#         if result:
-#             return {"message": "Login successful", "user_id": result[0]}
-#         raise HTTPException(status_code=401, detail="Invalid credentials")
-#     except Exception:
-#         traceback.print_exc()
-#         raise HTTPException(status_code=500, detail="Internal Server Error")
-#     finally:
-#         conn.close()
-
-
 
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
@@ -67,10 +26,13 @@ async def register(user: User):
                 detail="Email already registered"
             )
         
+
+        hashed_pwd = hash_password(user.password)
+
         # ✅ Insérer l'utilisateur
         cursor.execute(
             "INSERT INTO users (email, password, name, role) VALUES (?, ?, ?, ?)",
-            (user.email, user.password or "", user.name, user.role.value)
+            (user.email, hashed_pwd or "", user.name, user.role.value)
         )
         conn.commit()
         
@@ -132,6 +94,7 @@ async def register(user: User):
         if conn:
             conn.close()
 
+
 @router.post("/login")
 async def login(user: User):
     """Connecter un utilisateur"""
@@ -141,25 +104,35 @@ async def login(user: User):
         cursor = conn.cursor()
         
         print(f"🔍 Login attempt: {user.email}")
-        
+
+        # ✅ 1. Récupérer l’utilisateur par email
         cursor.execute(
-            "SELECT id, name, role FROM users WHERE email = ? AND password = ?",
-            (user.email, user.password)
+            "SELECT id, email, password, name, role FROM users WHERE email = ?",
+            (user.email,)
         )
-        result = cursor.fetchone()
-        
-        if result:
-            print(f"✅ Login successful for user: {result[0]}")
-            return {
-                "id": result[0],
-                "email": user.email,
-                "name": result[1],
-                "role": result[2]
-            }
-        
-        print(f"❌ Invalid credentials for: {user.email}")
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-        
+        db_user = cursor.fetchone()
+
+        if not db_user:
+            print("❌ User not found")
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+
+        user_id, email, hashed_password, name, role = db_user
+
+        # ✅ 2. Vérifier le mot de passe hashé
+        if not verify_password(user.password, hashed_password):
+            print("❌ Wrong password")
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+
+        print(f"✅ Login successful for user: {user_id}")
+
+        # ✅ 3. Retourner la réponse
+        return {
+            "id": user_id,
+            "email": email,
+            "name": name,
+            "role": role
+        }
+
     except HTTPException:
         raise
     except sqlite3.OperationalError as e:
@@ -173,6 +146,10 @@ async def login(user: User):
     finally:
         if conn:
             conn.close()
+
+
+
+
 
 @router.get("/user/{user_id}")
 async def get_user_by_id(user_id: int):

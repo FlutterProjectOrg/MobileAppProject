@@ -25,6 +25,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   DeliveryProfile? _deliveryProfile;
   OwnerProfile? _ownerProfile;
   bool _isLoading = false;
+
   // Controllers for text fields
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
@@ -39,6 +40,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   int? _userId;
   String? _role;
+
   @override
   void initState() {
     super.initState();
@@ -90,8 +92,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _loadUserProfile() async {
     if (_userId == null) return;
-
-    setState(() => _isLoading = true); // Add loading state
+    setState(() => _isLoading = true);
 
     try {
       final profile = await _authService.getProfile(_userId!);
@@ -131,7 +132,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _loadDeliveryProfile() async {
     if (_userId == null) return;
-
     setState(() => _isLoading = true);
 
     try {
@@ -166,7 +166,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _loadOwnerProfile() async {
     if (_userId == null) return;
-
     setState(() => _isLoading = true);
 
     try {
@@ -182,7 +181,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _restaurantNameController.text = profile.restaurantName;
           _restaurantAddressController.text = profile.restaurantAddress;
           _cuisineTypes.clear();
-          _cuisinePreferences.addAll(profile.cuisineTypes);
+          _cuisineTypes.addAll(profile.cuisineTypes);
           _avatarUrl = profile.avatarUrl;
         });
       }
@@ -205,7 +204,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     bool success = false;
 
     if (_userProfile != null) {
-      // Cas UserProfile standard
       final updatedProfile = UserProfile(
         id: _userProfile!.id,
         email: _emailController.text,
@@ -218,10 +216,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         darkModeEnabled: _darkModeEnabled,
         avatarUrl: _avatarUrl,
       );
-
       success = await _authService.updateProfile(updatedProfile);
     } else if (_ownerProfile != null) {
-      // Cas OwnerProfile
       final updatedOwner = OwnerProfile(
         id: _ownerProfile!.id,
         email: _emailController.text,
@@ -231,10 +227,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         cuisineTypes: _cuisineTypes,
         avatarUrl: _avatarUrl,
       );
-
       success = await _authService.updateOwnerProfile(updatedOwner);
     } else if (_deliveryProfile != null) {
-      // Cas DeliveryProfile
       final updatedDelivery = DeliveryProfile(
         id: _deliveryProfile!.id,
         email: _emailController.text,
@@ -243,11 +237,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         vehicleType: _vehicleController.text,
         avatarUrl: _avatarUrl,
       );
-
       success = await _authService.updateDeliveryProfile(updatedDelivery);
     }
 
-    // Affichage du résultat
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -268,7 +260,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     'Chinois',
   ];
   List<String> _cuisinePreferences = [];
-
   List<String> _cuisineTypes = [];
 
   @override
@@ -277,12 +268,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _nameController.dispose();
     _emailController.dispose();
     _locationController.dispose();
+    _phoneController.dispose();
+    _vehicleController.dispose();
+    _restaurantNameController.dispose();
+    _restaurantAddressController.dispose();
     super.dispose();
   }
 
   void _removeCuisine(String cuisine) {
     setState(() {
-      _cuisinePreferences.remove(cuisine);
+      if (_role == 'owner') {
+        _cuisineTypes.remove(cuisine);
+      } else {
+        _cuisinePreferences.remove(cuisine);
+      }
     });
   }
 
@@ -290,12 +289,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     showDialog(
       context: context,
       builder: (context) {
-        final tempSelected = List<String>.from(_cuisinePreferences);
+        final tempSelected = _role == 'owner'
+            ? List<String>.from(_cuisineTypes)
+            : List<String>.from(_cuisinePreferences);
         String searchQuery = '';
 
         return StatefulBuilder(
           builder: (context, setStateDialog) {
-            // Filtrer les cuisines en fonction de la recherche
             final filteredCuisines = _allCuisines.where((cuisine) {
               return cuisine.toLowerCase().contains(searchQuery.toLowerCase());
             }).toList();
@@ -314,7 +314,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Barre de recherche
                     Padding(
                       padding: const EdgeInsets.only(bottom: 16),
                       child: TextField(
@@ -346,8 +345,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         },
                       ),
                     ),
-
-                    // Compteur de sélections
                     if (tempSelected.isNotEmpty)
                       Container(
                         width: double.infinity,
@@ -367,8 +364,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         ),
                       ),
-
-                    // Message si aucun résultat
                     if (filteredCuisines.isEmpty)
                       Expanded(
                         child: Center(
@@ -389,20 +384,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Essayez un autre terme de recherche',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey.shade500,
-                                ),
-                              ),
                             ],
                           ),
                         ),
                       )
                     else
-                      // Liste des cuisines filtrées
                       Expanded(
                         child: ListView.builder(
                           shrinkWrap: true,
@@ -428,11 +414,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                               child: CheckboxListTile(
                                 value: selected,
-                                title: _buildHighlightedText(
+                                title: Text(
                                   cuisine,
-                                  searchQuery,
-                                  context,
-                                  selected,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: selected
+                                        ? FontWeight.w600
+                                        : FontWeight.w400,
+                                  ),
                                 ),
                                 controlAffinity:
                                     ListTileControlAffinity.leading,
@@ -474,7 +463,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ElevatedButton(
                   onPressed: () {
                     setState(() {
-                      _cuisinePreferences = tempSelected;
+                      if (_role == 'owner') {
+                        _cuisineTypes = tempSelected;
+                      } else {
+                        _cuisinePreferences = tempSelected;
+                      }
                     });
                     Navigator.pop(context);
                   },
@@ -498,60 +491,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // Méthode pour mettre en surbrillance le texte de recherche
-  Widget _buildHighlightedText(
-    String text,
-    String query,
-    BuildContext context,
-    bool selected,
-  ) {
-    if (query.isEmpty) {
-      return Text(
-        text,
-        style: TextStyle(
-          fontSize: 16,
-          fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-        ),
-      );
-    }
-
-    final lowerText = text.toLowerCase();
-    final lowerQuery = query.toLowerCase();
-    final index = lowerText.indexOf(lowerQuery);
-
-    if (index == -1) {
-      return Text(
-        text,
-        style: TextStyle(
-          fontSize: 16,
-          fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-        ),
-      );
-    }
-
-    return RichText(
-      text: TextSpan(
-        style: TextStyle(
-          fontSize: 16,
-          fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-          color: Theme.of(context).textTheme.bodyLarge?.color,
-        ),
-        children: [
-          TextSpan(text: text.substring(0, index)),
-          TextSpan(
-            text: text.substring(index, index + query.length),
-            style: TextStyle(
-              backgroundColor: Colors.yellow.shade200,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
-            ),
-          ),
-          TextSpan(text: text.substring(index + query.length)),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -560,15 +499,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     switch (_role) {
       case 'delivery':
-        // ✅ Envelopper dans Scaffold pour donner une contrainte
         return Scaffold(body: _buildDeliveryInfoCard());
-
       case 'owner':
-        // ✅ Envelopper dans Scaffold pour donner une contrainte
         return Scaffold(body: _buildRestaurantInfoCard());
-
       default:
-        // Utilisateur standard - garder comme avant
         return Container(
           color: const Color(0xFFF5F5F5),
           child: Column(
@@ -595,9 +529,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  // Helper: safely compute initials for display
   String _displayInitials() {
-    final name = (_userProfile?.name ?? '').trim();
+    String name = '';
+    if (_userProfile != null) {
+      name = _userProfile!.name;
+    } else if (_deliveryProfile != null) {
+      name = _deliveryProfile!.name;
+    } else if (_ownerProfile != null) {
+      name = _ownerProfile!.name;
+    }
+
+    name = name.trim();
     if (name.isEmpty) return '??';
     final parts = name.split(RegExp(r'\s+'));
     final first = parts.first;
@@ -605,7 +547,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return first.substring(0, 1).toUpperCase();
   }
 
-  // Helper: build ImageProvider for avatar, null-safe and handles relative path
   ImageProvider<Object>? _avatarImageProvider() {
     String? avatar;
 
@@ -635,9 +576,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     final bytes = await file.readAsBytes();
     final base64Image = base64Encode(bytes);
-    // include data URI prefix so backend split(',') works if needed
     final dataUri = 'data:image/png;base64,$base64Image';
     String? uploadedUrl;
+
     if (_role == 'user') {
       uploadedUrl = await _authService.uploadAvatar(_userId!, dataUri);
     } else if (_role == 'owner') {
@@ -645,6 +586,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } else if (_role == 'delivery') {
       uploadedUrl = await _authService.uploadDeliveryAvatar(_userId!, dataUri);
     }
+
     if (uploadedUrl != null) {
       setState(() {
         if (_userProfile != null) {
@@ -680,10 +622,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             avatarUrl: uploadedUrl,
           );
         }
+        _avatarUrl = uploadedUrl;
       });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Avatar uploaded'),
+          content: Text('Avatar uploaded successfully'),
           backgroundColor: Colors.green,
         ),
       );
@@ -691,7 +634,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Failed to upload avatar'),
-          backgroundColor: Colors.green,
+          backgroundColor: Colors.red,
         ),
       );
     }
@@ -987,8 +930,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
               ),
               Text(
-                '0€ - 50€',
-                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                '${_budgetValue.toInt()}€',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),
@@ -1188,7 +1135,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // ==================== DELIVERY INFO CARD ====================
+  // ==================== DELIVERY PROFILE ====================
   Widget _buildDeliveryInfoCard() {
     return Container(
       color: const Color(0xFFF5F5F5),
@@ -1199,11 +1146,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               children: [
-                _buildDeliveryStatsCard(),
+                _buildDeliveryPersonalInfoCard(),
                 const SizedBox(height: 16),
-                _buildDeliveryDocumentsCard(),
-                const SizedBox(height: 16),
-                _buildDeliveryPerformanceCard(),
+                _buildDeliveryContactCard(),
                 const SizedBox(height: 16),
                 _buildDeliverySettingsCard(),
                 const SizedBox(height: 16),
@@ -1218,7 +1163,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildDeliveryHeader() {
-    String displayName = _deliveryProfile?.name ?? 'Loading...';
+    String displayName = _deliveryProfile?.name ?? 'Chargement...';
+    String displayEmail = _deliveryProfile?.email ?? '';
 
     return Container(
       decoration: const BoxDecoration(
@@ -1295,6 +1241,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                     const SizedBox(height: 6),
+                    Text(
+                      displayEmail,
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.9),
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 10,
@@ -1304,13 +1258,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         color: Colors.green.shade400,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Text(
-                        '● En ligne',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.delivery_dining,
+                            color: Colors.white,
+                            size: 14,
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            'Livreur actif',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -1323,7 +1288,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildDeliveryStatsCard() {
+  Widget _buildDeliveryPersonalInfoCard() {
     return Transform.translate(
       offset: const Offset(0, -24),
       child: Container(
@@ -1343,32 +1308,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Statistiques de livraison',
+              'Informations personnelles',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildStatItem(
-                  icon: Icons.local_shipping,
-                  label: 'Livraisons',
-                  value: '127',
-                  color: const Color(0xFF3B82F6),
-                ),
-                _buildStatItem(
-                  icon: Icons.star,
-                  label: 'Note',
-                  value: '4.8',
-                  color: Colors.amber,
-                ),
-                _buildStatItem(
-                  icon: Icons.access_time,
-                  label: 'Temps moyen',
-                  value: '28min',
-                  color: Colors.green,
-                ),
-              ],
+            _buildTextField(
+              controller: _nameController,
+              label: 'Nom complet',
+              icon: Icons.person,
+            ),
+            const SizedBox(height: 16),
+            _buildTextField(
+              controller: _emailController,
+              label: 'Email',
+              icon: Icons.mail,
+              keyboardType: TextInputType.emailAddress,
             ),
           ],
         ),
@@ -1376,33 +1330,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildStatItem({
-    required IconData icon,
-    required String label,
-    required String value,
-    required Color color,
-  }) {
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(icon, color: color, size: 24),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          value,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-      ],
-    );
-  }
-
-  Widget _buildDeliveryDocumentsCard() {
+  Widget _buildDeliveryContactCard() {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -1420,173 +1348,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Documents',
+            'Informations de livraison',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
-          _buildDocumentItem(
-            icon: Icons.card_giftcard,
-            title: 'Permis de conduire',
-            subtitle: 'Valide jusqu\'au 15/12/2025',
-            status: 'Vérifié',
-            statusColor: Colors.green,
+          _buildTextField(
+            controller: _phoneController,
+            label: 'Numéro de téléphone',
+            icon: Icons.phone,
+            keyboardType: TextInputType.phone,
           ),
-          const SizedBox(height: 12),
-          _buildDocumentItem(
-            icon: Icons.assignment,
-            title: 'Assurance',
-            subtitle: 'Assurance responsabilité civile',
-            status: 'Expirant',
-            statusColor: Colors.orange,
-          ),
-          const SizedBox(height: 12),
-          _buildDocumentItem(
-            icon: Icons.verified_user,
-            title: 'Vérification d\'identité',
-            subtitle: 'Complétée le 20/08/2024',
-            status: 'Approuvé',
-            statusColor: Colors.green,
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _vehicleController,
+            label: 'Type de véhicule',
+            icon: Icons.directions_car,
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildDocumentItem({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required String status,
-    required Color statusColor,
-  }) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.grey.shade100,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(icon, color: Colors.grey[600]),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              Text(
-                subtitle,
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-              ),
-            ],
-          ),
-        ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            color: statusColor.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            status,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: statusColor,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDeliveryPerformanceCard() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Performance',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
-          _buildPerformanceItem(
-            label: 'Taux de complétude',
-            percentage: 98.5,
-            color: Colors.green,
-          ),
-          const SizedBox(height: 16),
-          _buildPerformanceItem(
-            label: 'Ponctualité',
-            percentage: 95.2,
-            color: Colors.blue,
-          ),
-          const SizedBox(height: 16),
-          _buildPerformanceItem(
-            label: 'Satisfaction client',
-            percentage: 97.8,
-            color: Colors.purple,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPerformanceItem({
-    required String label,
-    required double percentage,
-    required Color color,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              label,
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-            ),
-            Text(
-              '${percentage.toStringAsFixed(1)}%',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: LinearProgressIndicator(
-            value: percentage / 100,
-            minHeight: 8,
-            backgroundColor: Colors.grey[300],
-            valueColor: AlwaysStoppedAnimation<Color>(color),
-          ),
-        ),
-      ],
     );
   }
 
@@ -1615,19 +1394,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _buildSettingRow(
             icon: Icons.notifications,
             title: 'Notifications',
-            subtitle: 'Nouvelles commandes',
+            subtitle: 'Nouvelles commandes et mises à jour',
             value: _notificationsEnabled,
             onChanged: (value) {
               setState(() => _notificationsEnabled = value);
             },
-          ),
-          const SizedBox(height: 16),
-          _buildSettingRow(
-            icon: Icons.location_on,
-            title: 'Partage de localisation',
-            subtitle: 'En direct avec les clients',
-            value: true,
-            onChanged: (value) {},
           ),
         ],
       ),
@@ -1683,6 +1454,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  // ==================== OWNER/RESTAURANT PROFILE ====================
   Widget _buildRestaurantInfoCard() {
     return Container(
       color: const Color(0xFFF5F5F5),
@@ -1693,13 +1465,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               children: [
-                _buildRestaurantStatsCard(),
+                _buildRestaurantPersonalInfoCard(),
                 const SizedBox(height: 16),
-                _buildRestaurantInfoDetailsCard(),
-                const SizedBox(height: 16),
-                _buildRestaurantHoursCard(),
+                _buildRestaurantDetailsCard(),
                 const SizedBox(height: 16),
                 _buildRestaurantCuisinesCard(),
+                const SizedBox(height: 16),
+                _buildRestaurantSettingsCard(),
                 const SizedBox(height: 16),
                 _buildRestaurantActionButtons(),
                 const SizedBox(height: 32),
@@ -1712,7 +1484,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildRestaurantHeader() {
-    String displayName = _ownerProfile?.name ?? 'Loading...';
+    String displayName = _ownerProfile?.name ?? 'Chargement...';
+    String displayEmail = _ownerProfile?.email ?? '';
+    String restaurantName = _ownerProfile?.restaurantName ?? 'Mon Restaurant';
 
     return Container(
       decoration: const BoxDecoration(
@@ -1788,23 +1562,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 4),
+                    Text(
+                      displayEmail,
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.9),
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 10,
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.blue.shade400,
+                        color: Colors.white.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Text(
-                        '● Ouvert',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.3),
                         ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.restaurant,
+                            color: Colors.white,
+                            size: 14,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            restaurantName,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -1817,7 +1613,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildRestaurantStatsCard() {
+  Widget _buildRestaurantPersonalInfoCard() {
     return Transform.translate(
       offset: const Offset(0, -24),
       child: Container(
@@ -1837,32 +1633,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Statistiques',
+              'Informations personnelles',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildStatItem(
-                  icon: Icons.shopping_bag,
-                  label: 'Commandes',
-                  value: '542',
-                  color: const Color(0xFF10B981),
-                ),
-                _buildStatItem(
-                  icon: Icons.star,
-                  label: 'Note',
-                  value: '4.7',
-                  color: Colors.amber,
-                ),
-                _buildStatItem(
-                  icon: Icons.trending_up,
-                  label: 'Revenus',
-                  value: '8.5K',
-                  color: Colors.purple,
-                ),
-              ],
+            _buildTextField(
+              controller: _nameController,
+              label: 'Nom du propriétaire',
+              icon: Icons.person,
+            ),
+            const SizedBox(height: 16),
+            _buildTextField(
+              controller: _emailController,
+              label: 'Email de contact',
+              icon: Icons.mail,
+              keyboardType: TextInputType.emailAddress,
             ),
           ],
         ),
@@ -1870,7 +1655,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildRestaurantInfoDetailsCard() {
+  Widget _buildRestaurantDetailsCard() {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -1895,83 +1680,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _buildTextField(
             controller: _restaurantNameController,
             label: 'Nom du restaurant',
-            icon: Icons.restaurant,
+            icon: Icons.restaurant_menu,
           ),
           const SizedBox(height: 16),
           _buildTextField(
             controller: _restaurantAddressController,
-            label: 'Adresse',
+            label: 'Adresse du restaurant',
             icon: Icons.location_on,
           ),
-          const SizedBox(height: 16),
-          _buildTextField(
-            controller: _emailController,
-            label: 'Email de contact',
-            icon: Icons.mail,
-            keyboardType: TextInputType.emailAddress,
-          ),
         ],
       ),
-    );
-  }
-
-  Widget _buildRestaurantHoursCard() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Horaires d\'ouverture',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
-          _buildHourItem('Lundi', '10:00 - 22:00'),
-          const SizedBox(height: 12),
-          _buildHourItem('Mardi', '10:00 - 22:00'),
-          const SizedBox(height: 12),
-          _buildHourItem('Mercredi', '10:00 - 22:00'),
-          const SizedBox(height: 12),
-          _buildHourItem('Jeudi', '10:00 - 22:00'),
-          const SizedBox(height: 12),
-          _buildHourItem('Vendredi', '10:00 - 23:00'),
-          const SizedBox(height: 12),
-          _buildHourItem('Samedi', '11:00 - 23:00'),
-          const SizedBox(height: 12),
-          _buildHourItem('Dimanche', 'Fermé'),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHourItem(String day, String hours) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          day,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-        ),
-        Text(
-          hours,
-          style: TextStyle(
-            fontSize: 14,
-            color: hours == 'Fermé' ? Colors.red : Colors.grey[600],
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
     );
   }
 
@@ -2001,62 +1719,138 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               GestureDetector(
                 onTap: _showAddCuisineDialog,
-                child: Icon(
-                  Icons.add_circle,
-                  color: Theme.of(context).primaryColor,
-                  size: 24,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10B981).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.add,
+                    color: Color(0xFF10B981),
+                    size: 20,
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              ..._cuisinePreferences.map(
-                (cuisine) => Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF10B981), Color(0xFF059669)],
+          if (_cuisineTypes.isEmpty)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.restaurant,
+                      size: 48,
+                      color: Colors.grey.shade400,
                     ),
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF10B981).withOpacity(0.2),
-                        blurRadius: 4,
+                    const SizedBox(height: 8),
+                    Text(
+                      'Aucun type de cuisine ajouté',
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 14,
                       ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        cuisine,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
+                    ),
+                    const SizedBox(height: 4),
+                    TextButton.icon(
+                      onPressed: _showAddCuisineDialog,
+                      icon: const Icon(Icons.add, size: 16),
+                      label: const Text('Ajouter maintenant'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFF10B981),
                       ),
-                      const SizedBox(width: 8),
-                      GestureDetector(
-                        onTap: () => _removeCuisine(cuisine),
-                        child: const Icon(
-                          Icons.close,
-                          color: Colors.white,
-                          size: 16,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
-            ],
+            )
+          else
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _cuisineTypes
+                  .map(
+                    (cuisine) => Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF10B981), Color(0xFF059669)],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF10B981).withOpacity(0.2),
+                            blurRadius: 4,
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            cuisine,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          GestureDetector(
+                            onTap: () => _removeCuisine(cuisine),
+                            child: const Icon(
+                              Icons.close,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                  .toList(),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRestaurantSettingsCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Paramètres',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          _buildSettingRow(
+            icon: Icons.notifications,
+            title: 'Notifications',
+            subtitle: 'Nouvelles commandes et messages',
+            value: _notificationsEnabled,
+            onChanged: (value) {
+              setState(() => _notificationsEnabled = value);
+            },
           ),
         ],
       ),
