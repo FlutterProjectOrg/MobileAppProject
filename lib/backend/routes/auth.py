@@ -4,7 +4,9 @@ from models import User
 from db import get_db
 import traceback
 from utils.security import hash_password,verify_password
-
+import random
+import smtplib
+from email.mime.text import MIMEText
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
@@ -94,7 +96,6 @@ async def register(user: User):
         if conn:
             conn.close()
 
-
 @router.post("/login")
 async def login(user: User):
     """Connecter un utilisateur"""
@@ -147,10 +148,6 @@ async def login(user: User):
         if conn:
             conn.close()
 
-
-
-
-
 @router.get("/user/{user_id}")
 async def get_user_by_id(user_id: int):
     """Récupérer un utilisateur par ID"""
@@ -192,3 +189,108 @@ async def get_user_by_id(user_id: int):
     finally:
         if conn:
             conn.close()
+
+
+@router.post("/forgot-password/request")
+async def forgot_password_request(data: dict):
+    """Étape 1 : envoi du code de vérification"""
+    email = data.get("email")
+    if not email:
+        raise HTTPException(status_code=400, detail="Email requis")
+
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
+    user = cursor.fetchone()
+    if not user:
+        raise HTTPException(status_code=404, detail="Aucun compte associé à cet email")
+
+    # Générer un code aléatoire à 6 chiffres
+    code = f"{random.randint(100000, 999999)}"
+
+    # Enregistrer le code dans une table temporaire
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS password_reset_codes (
+            email TEXT PRIMARY KEY,
+            code TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    cursor.execute("""
+        INSERT OR REPLACE INTO password_reset_codes (email, code)
+        VALUES (?, ?)
+    """, (email, code))
+    conn.commit()
+    conn.close()
+
+    # (Optionnel) envoi par email — ici, exemple via SMTP local
+    try:
+        smtp_server = "smtp.gmail.com"
+        smtp_port = 587
+        smtp_user = "firasbenkraiem1@gmail.com"
+        smtp_password = "gdba sbff fbap hopf"
+        msg = MIMEText(f"Votre code de vérification est : {code}")
+        msg["Subject"] = "Réinitialisation de votre mot de passe"
+        msg["From"] = "FoodFinder <firasbenkraiem8@gmail.com>"
+        msg["To"] = email
+
+        with smtplib.SMTP(smtp_server, smtp_port) as server:
+            server.starttls()          # active TLS
+            server.login(smtp_user, smtp_password)
+            server.send_message(msg)
+        print(f"Code généré pour {email} : {code}")
+    except Exception as e:
+        print(f"⚠️ Erreur d'envoi email: {e}")
+
+    return {"message": "Code envoyé avec succès", "code": code}  # (Tu peux retirer `code` en prod)
+
+
+@router.post("/forgot-password/verify")
+async def verify_reset_code(data: dict):
+    """Étape 2 : vérifier le code reçu par email"""
+    email = data.get("email")
+    code = data.get("code")
+
+    if not email or not code:
+        raise HTTPException(status_code=400, detail="Email et code requis")
+
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT code FROM password_reset_codes WHERE email = ?
+    """, (email,))
+    row = cursor.fetchone()
+    conn.close()
+
+    if not row or row["code"] != code:
+        raise HTTPException(status_code=400, detail="Code invalide ou expiré")
+
+    return {"message": "Code vérifié avec succès"}
+
+
+@router.post("/forgot-password/reset")
+async def reset_password(data: dict):
+    """Étape 3 : définir un nouveau mot de passe"""
+    email = data.get("email")
+    new_password = data.get("new_password")
+
+    if not email or not new_password:
+        raise HTTPException(status_code=400, detail="Champs manquants")
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    # Vérifier que l'utilisateur existe
+    cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
+    user = cursor.fetchone()
+    if not user:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
+
+    hashed_pwd = hash_password(new_password)
+    cursor.execute("UPDATE users SET password = ? WHERE email = ?", (hashed_pwd, email))
+    cursor.execute("DELETE FROM password_reset_codes WHERE email = ?", (email,))
+    conn.commit()
+    conn.close()
+
+    return {"message": "Mot de passe réinitialisé avec succès"}

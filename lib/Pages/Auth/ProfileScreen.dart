@@ -80,12 +80,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (e) {
       debugPrint('Error initializing profile: $e');
       if (_mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to initialize profile'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        _showErrorSnackBar("Failed to initialize profile");
       }
     }
   }
@@ -116,12 +111,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (e) {
       debugPrint('Error loading profile: $e');
       if (_mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to load profile'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        _showErrorSnackBar("Failed to load profile");
       }
     } finally {
       if (_mounted) {
@@ -152,12 +142,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (e) {
       debugPrint('Error loading delivery profile: $e');
       if (_mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to load delivery profile'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        _showErrorSnackBar("Failed to load delivery profile");
       }
     } finally {
       if (_mounted) setState(() => _isLoading = false);
@@ -188,12 +173,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (e) {
       debugPrint('Error loading owner profile: $e');
       if (_mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to load owner profile'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        _showErrorSnackBar("Failed to load owner profile");
       }
     } finally {
       if (_mounted) setState(() => _isLoading = false);
@@ -239,15 +219,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
       success = await _authService.updateDeliveryProfile(updatedDelivery);
     }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          success ? 'Profile updated successfully' : 'Failed to update profile',
-        ),
-        backgroundColor: success ? Colors.green : Colors.red,
-      ),
-    );
+    success
+        ? ("Profile updated successfully")
+        : _showErrorSnackBar("Failed to update profile");
   }
 
   final List<String> _allCuisines = [
@@ -624,19 +598,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }
         _avatarUrl = uploadedUrl;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Avatar uploaded successfully'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      _showSuccessSnackBar("Avatar uploaded successfully");
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Failed to upload avatar'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _showErrorSnackBar("Failed to upload avatar");
     }
   }
 
@@ -1817,6 +1781,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   .toList(),
             ),
         ],
+      ),
+    );
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.error_outline, color: Colors.white),
+            const SizedBox(width: 12),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: Colors.red[600],
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
+  void _showSuccessSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle_outline, color: Colors.white),
+            const SizedBox(width: 12),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: Colors.green[600],
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }

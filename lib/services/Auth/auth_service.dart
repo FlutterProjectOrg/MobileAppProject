@@ -11,6 +11,7 @@ class AuthService {
   static final String baseUrl = dotenv.env['DB_URL'] ?? 'http://10.0.2.2:8000';
 
   int? currentUserId;
+
   Future<int?> register(
     String email,
     String password,
@@ -308,6 +309,42 @@ class AuthService {
     } catch (e) {
       debugPrint('Error updating delivery profile: $e');
       return false;
+    }
+  }
+
+  Future<void> sendVerificationCode(String email) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/auth/forgot-password/request'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email}),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception(jsonDecode(response.body)['message'] ?? 'Erreur serveur');
+    }
+  }
+
+  Future<void> verifyCode(String email, String code) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/auth/forgot-password/verify'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email, 'code': code}),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception(jsonDecode(response.body)['message'] ?? 'Code incorrect');
+    }
+  }
+
+  Future<void> resetPassword(String email, String newPassword) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/auth/forgot-password/reset'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email, 'new_password': newPassword}),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception(jsonDecode(response.body)['message'] ?? 'Erreur serveur');
     }
   }
 }

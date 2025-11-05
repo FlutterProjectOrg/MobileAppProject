@@ -96,14 +96,26 @@ class _AuthScreenState extends State<AuthScreen>
         await prefs.setString('role', user?.role ?? 'user');
         widget.onAuthenticated();
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Authentication failed'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        _showErrorSnackBar("Authentication failed");
       }
     }
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.error_outline, color: Colors.white),
+            const SizedBox(width: 12),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: Colors.red[600],
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
   }
 
   void _toggleSignup() {
@@ -269,24 +281,28 @@ class _AuthScreenState extends State<AuthScreen>
           const SizedBox(height: 24),
           _buildSubmitButton(),
           const SizedBox(height: 24),
+          _isSignup
+              ? const SizedBox.shrink()
+              : TextButton(
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => const ForgotPasswordDialog(),
+                    );
+                  },
+                  child: const Text(
+                    'Mot de passe oublié?',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFF3B82F6),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+
           _buildDivider(),
           const SizedBox(height: 24),
-          TextButton(
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) => const ForgotPasswordDialog(),
-              );
-            },
-            child: const Text(
-              'Mot de passe oublié?',
-              style: TextStyle(
-                fontSize: 14,
-                color: Color(0xFF3B82F6),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
+
           _buildGoogleButton(),
           const SizedBox(height: 16),
           _buildToggleSignup(),
@@ -489,7 +505,7 @@ class _AuthScreenState extends State<AuthScreen>
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
-            'Ou continuer avec',
+            'Ou',
             style: TextStyle(fontSize: 14, color: Colors.grey[600]),
           ),
         ),
@@ -541,12 +557,7 @@ class _AuthScreenState extends State<AuthScreen>
 
       widget.onAuthenticated();
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Connexion Google annulée ou échouée'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _showErrorSnackBar("Connexion Google annulée ou échouée");
     }
   }
 
