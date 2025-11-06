@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:local_auth/local_auth.dart';
 import 'package:mobile_app_project/Pages/Auth/ForgotPasswordDialog.dart';
 import 'package:mobile_app_project/services/Auth/auth_service.dart';
+import 'package:mobile_app_project/services/Auth/biometric_service.dart';
 import 'package:mobile_app_project/services/Auth/google_auth_service.dart';
+import 'package:mobile_app_project/services/Auth/storage_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -24,7 +27,8 @@ class _AuthScreenState extends State<AuthScreen>
   bool _isSignup = false;
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
-
+  final storage = StorageService();
+  final biometric = BiometricService();
   String selectedRole = 'user';
   final Map<String, Map<String, dynamic>> roleOptions = {
     'user': {
@@ -43,6 +47,8 @@ class _AuthScreenState extends State<AuthScreen>
       'description': 'Livrer les commandes',
     },
   };
+  final biometricService = BiometricService();
+
   @override
   void initState() {
     super.initState();
@@ -94,9 +100,74 @@ class _AuthScreenState extends State<AuthScreen>
         await prefs.setInt('userId', userId!);
         final user = await _authService.getUserById(userId!);
         await prefs.setString('role', user?.role ?? 'user');
+        await storage.saveUserId(userId!);
+
+        // 🧩 Étape biométrie : proposer l'activation si non déjà activée
+        final biometricEnabled = await storage.read('biometric_enabled');
+        final biometricUserId = await storage.read('biometric_user_id');
+
+        if (biometricEnabled != 'true' ||
+            biometricUserId != userId.toString()) {
+          final shouldEnable = await _showEnableBiometricDialog(context);
+          if (shouldEnable == true) {
+            await storage.write('biometric_enabled', 'true');
+            await storage.write('biometric_user_id', userId.toString());
+            _showSuccessSnackBar("Connexion biométrique activée");
+          }
+        }
+
         widget.onAuthenticated();
       } else {
         _showErrorSnackBar("Authentication failed");
+      }
+    }
+  }
+
+  Future<bool?> _showEnableBiometricDialog(BuildContext context) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Activer la connexion par empreinte ?"),
+        content: Text(
+          "Souhaitez-vous activer la reconnaissance biométrique pour ce compte ?",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text("Non"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text("Oui"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _loginWithBiometrics() async {
+    final auth = LocalAuthentication();
+    final canCheck = await auth.canCheckBiometrics;
+
+    if (!canCheck) {
+      _showErrorSnackBar("Biométrie non disponible sur cet appareil");
+      return;
+    }
+
+    final didAuthenticate = await auth.authenticate(
+      localizedReason: 'Authentifiez-vous pour vous connecter',
+      options: const AuthenticationOptions(biometricOnly: true),
+    );
+
+    if (didAuthenticate) {
+      final biometricEnabled = await storage.read('biometric_enabled');
+      final biometricUserId = await storage.read('biometric_user_id');
+
+      if (biometricEnabled == 'true' && biometricUserId != null) {
+        await storage.saveUserId(int.parse(biometricUserId));
+        widget.onAuthenticated();
+      } else {
+        _showErrorSnackBar("Aucun compte biométrique trouvé");
       }
     }
   }
@@ -106,14 +177,101 @@ class _AuthScreenState extends State<AuthScreen>
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.error_outline, color: Colors.white),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.error_outline_rounded,
+                color: Colors.white,
+                size: 24,
+              ),
+            ),
             const SizedBox(width: 12),
-            Expanded(child: Text(message)),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Erreur',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    message,
+                    style: const TextStyle(fontSize: 13, color: Colors.white),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
-        backgroundColor: Colors.red[600],
+        backgroundColor: const Color(0xFFEF4444),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        margin: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        duration: const Duration(seconds: 4),
+        elevation: 8,
+      ),
+    );
+  }
+
+  void _showSuccessSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.check_circle_outline_rounded,
+                color: Colors.white,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Succès',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    message,
+                    style: const TextStyle(fontSize: 13, color: Colors.white),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: const Color(0xFF10B981),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        margin: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        duration: const Duration(seconds: 4),
+        elevation: 8,
       ),
     );
   }
@@ -281,6 +439,8 @@ class _AuthScreenState extends State<AuthScreen>
           const SizedBox(height: 24),
           _buildSubmitButton(),
           const SizedBox(height: 24),
+          _isSignup ? const SizedBox.shrink() : _buildBiometricButton(),
+          const SizedBox(height: 24),
           _isSignup
               ? const SizedBox.shrink()
               : TextButton(
@@ -305,8 +465,43 @@ class _AuthScreenState extends State<AuthScreen>
 
           _buildGoogleButton(),
           const SizedBox(height: 16),
+
+          const SizedBox(height: 16),
           _buildToggleSignup(),
         ],
+      ),
+    );
+  }
+
+  Widget _buildBiometricButton() {
+    return Container(
+      width: 56,
+      height: 56,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF8B5CF6), Color(0xFF3B82F6)],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0xFF3B82F6).withOpacity(0.4),
+            blurRadius: 12,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        shape: CircleBorder(),
+        child: InkWell(
+          onTap: _loginWithBiometrics,
+          customBorder: CircleBorder(),
+          child: Center(
+            child: Icon(Icons.fingerprint, color: Colors.white, size: 28),
+          ),
+        ),
       ),
     );
   }
@@ -554,7 +749,21 @@ class _AuthScreenState extends State<AuthScreen>
       final prefs = await SharedPreferences.getInstance();
       await prefs.setInt('userId', user['id']);
       await prefs.setString('role', user['role']);
+      await storage.saveUserId(user['id']!);
 
+      // ✅ Vérifie si biométrie activée
+      final biometricEnabled = await storage.isBiometricEnabled();
+      final biometricUserId = await storage.getBiometricUserId();
+
+      // ✅ Si pas encore activée pour cet utilisateur, proposer
+      if (!biometricEnabled || biometricUserId != userId) {
+        final shouldEnable = await _showEnableBiometricDialog(context);
+        if (shouldEnable == true) {
+          await storage.saveBiometricEnabled(true);
+          await storage.saveBiometricUserId(user['id']);
+          _showSuccessSnackBar("Connexion biométrique activée");
+        }
+      }
       widget.onAuthenticated();
     } else {
       _showErrorSnackBar("Connexion Google annulée ou échouée");

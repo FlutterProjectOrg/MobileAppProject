@@ -206,7 +206,7 @@ async def forgot_password_request(data: dict):
         raise HTTPException(status_code=404, detail="Aucun compte associé à cet email")
 
     # Générer un code aléatoire à 6 chiffres
-    code = f"{random.randint(100000, 999999)}"
+    code = f"{random.randint(1000, 9999)}"
 
     # Enregistrer le code dans une table temporaire
     cursor.execute("""

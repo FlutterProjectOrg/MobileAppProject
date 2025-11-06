@@ -347,6 +347,8 @@ class AuthService {
       throw Exception(jsonDecode(response.body)['message'] ?? 'Erreur serveur');
     }
   }
+
+  getBiometricUserId() {}
 }
 
 class User {

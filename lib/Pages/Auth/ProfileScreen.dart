@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_app_project/services/Auth/auth_service.dart';
+import 'package:mobile_app_project/services/Auth/biometric_service.dart';
+import 'package:mobile_app_project/services/Auth/storage_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -25,7 +27,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   DeliveryProfile? _deliveryProfile;
   OwnerProfile? _ownerProfile;
   bool _isLoading = false;
-
+  final BiometricService _biometricService = BiometricService();
+  bool _biometricEnabled = false;
   // Controllers for text fields
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
@@ -40,11 +43,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   int? _userId;
   String? _role;
-
+  int? _biometricUserId;
   @override
   void initState() {
     super.initState();
     _initializeProfile();
+    _loadBiometricStatus();
+    _loadBiometricUser();
+  }
+
+  Future<void> _loadBiometricUser() async {
+    final storedUserId = await StorageService().getBiometricUserId();
+    setState(() {
+      _biometricUserId = storedUserId;
+    });
+  }
+
+  Future<void> _loadBiometricStatus() async {
+    final enabled = await _biometricService.isBiometricEnabled();
+    setState(() => _biometricEnabled = enabled);
+  }
+
+  Future<void> _toggleBiometric() async {
+    if (!_biometricEnabled) {
+      final available = await _biometricService.isBiometricAvailable();
+      if (!available) {
+        _showErrorSnackBar("Biométrie non disponible sur cet appareil");
+        return;
+      }
+
+      final authenticated = await _biometricService.authenticateUser();
+      if (authenticated) {
+        await _biometricService.setBiometricEnabled(true, _userId!);
+        setState(() => _biometricEnabled = true);
+      }
+    } else {
+      await _biometricService.setBiometricEnabled(false, 0);
+      setState(() => _biometricEnabled = false);
+    }
   }
 
   Future<void> _initializeProfile() async {
@@ -220,7 +256,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       success = await _authService.updateDeliveryProfile(updatedDelivery);
     }
     success
-        ? ("Profile updated successfully")
+        ? _showSuccessSnackBar("Profile updated successfully")
         : _showErrorSnackBar("Failed to update profile");
   }
 
@@ -1007,6 +1043,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
               setState(() => _darkModeEnabled = value);
             },
           ),
+          const SizedBox(height: 16),
+          _buildSettingRow(
+            icon: Icons.fingerprint_outlined,
+            title: 'Connexion biométrique',
+            subtitle: 'Utiliser votre empreinte',
+            value: _biometricEnabled && _userId == _biometricUserId,
+            onChanged: (_) => _toggleBiometric(),
+          ),
         ],
       ),
     );
@@ -1363,6 +1407,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
             onChanged: (value) {
               setState(() => _notificationsEnabled = value);
             },
+          ),
+          _buildSettingRow(
+            icon: Icons.fingerprint_rounded,
+            title: 'Connexion biométrique',
+            subtitle: 'Utiliser votre empreinte',
+            value: _biometricEnabled && _userId == _biometricUserId,
+            onChanged: (_) => _toggleBiometric(),
           ),
         ],
       ),
@@ -1790,14 +1841,49 @@ class _ProfileScreenState extends State<ProfileScreen> {
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.error_outline, color: Colors.white),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.error_outline_rounded,
+                color: Colors.white,
+                size: 24,
+              ),
+            ),
             const SizedBox(width: 12),
-            Expanded(child: Text(message)),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Erreur',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    message,
+                    style: const TextStyle(fontSize: 13, color: Colors.white),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
-        backgroundColor: Colors.red[600],
+        backgroundColor: const Color(0xFFEF4444),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        margin: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        duration: const Duration(seconds: 4),
+        elevation: 8,
       ),
     );
   }
@@ -1807,14 +1893,49 @@ class _ProfileScreenState extends State<ProfileScreen> {
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.check_circle_outline, color: Colors.white),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.check_circle_outline_rounded,
+                color: Colors.white,
+                size: 24,
+              ),
+            ),
             const SizedBox(width: 12),
-            Expanded(child: Text(message)),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Succès',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    message,
+                    style: const TextStyle(fontSize: 13, color: Colors.white),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
-        backgroundColor: Colors.green[600],
+        backgroundColor: const Color(0xFF10B981),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        margin: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        duration: const Duration(seconds: 4),
+        elevation: 8,
       ),
     );
   }
@@ -1849,6 +1970,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
             onChanged: (value) {
               setState(() => _notificationsEnabled = value);
             },
+          ),
+          _buildSettingRow(
+            icon: Icons.fingerprint_rounded,
+            title: 'Connexion biométrique',
+            subtitle: 'Utiliser votre empreinte',
+            value: _biometricEnabled && _userId == _biometricUserId,
+            onChanged: (_) => _toggleBiometric(),
           ),
         ],
       ),

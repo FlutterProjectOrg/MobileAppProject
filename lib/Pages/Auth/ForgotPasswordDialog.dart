@@ -98,8 +98,8 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog>
   Future<void> _verifyCode() async {
     final enteredCode = _codeControllers.map((c) => c.text).join();
 
-    if (enteredCode.length != 6) {
-      _showErrorSnackBar('Veuillez entrer un code à 6 chiffres');
+    if (enteredCode.length != 4) {
+      _showErrorSnackBar('Veuillez entrer un code à 4 chiffres');
       return;
     }
 
@@ -156,14 +156,49 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog>
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.error_outline, color: Colors.white),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.error_outline_rounded,
+                color: Colors.white,
+                size: 24,
+              ),
+            ),
             const SizedBox(width: 12),
-            Expanded(child: Text(message)),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Erreur',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    message,
+                    style: const TextStyle(fontSize: 13, color: Colors.white),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
-        backgroundColor: Colors.red[600],
+        backgroundColor: const Color(0xFFEF4444),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        margin: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        duration: const Duration(seconds: 4),
+        elevation: 8,
       ),
     );
   }
@@ -173,14 +208,49 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog>
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.check_circle_outline, color: Colors.white),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.check_circle_outline_rounded,
+                color: Colors.white,
+                size: 24,
+              ),
+            ),
             const SizedBox(width: 12),
-            Expanded(child: Text(message)),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Succès',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    message,
+                    style: const TextStyle(fontSize: 13, color: Colors.white),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
-        backgroundColor: Colors.green[600],
+        backgroundColor: const Color(0xFF10B981),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        margin: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        duration: const Duration(seconds: 4),
+        elevation: 8,
       ),
     );
   }
@@ -352,7 +422,7 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog>
           style: TextStyle(fontSize: 14, color: Colors.grey[600]),
         ),
         const SizedBox(height: 24),
-        _buildLabel('Code de vérification (6 chiffres)'),
+        _buildLabel('Code de vérification (4 chiffres)'),
         const SizedBox(height: 12),
         _buildPinCodeInput(),
         const SizedBox(height: 24),
@@ -392,7 +462,7 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog>
   Widget _buildPinCodeInput() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: List.generate(6, (index) {
+      children: List.generate(4, (index) {
         return SizedBox(
           width: 50,
           height: 50,
@@ -403,7 +473,7 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog>
             maxLength: 1,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             onChanged: (value) {
-              if (value.isNotEmpty && index < 5) {
+              if (value.isNotEmpty && index < 3) {
                 FocusScope.of(context).nextFocus();
               } else if (value.isEmpty && index > 0) {
                 FocusScope.of(context).previousFocus();
