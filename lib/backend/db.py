@@ -72,5 +72,31 @@ def init_db():
             )
         """)
 
+        # Table restaurants
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS restaurants (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                phone TEXT NOT NULL,
+                adresse TEXT NOT NULL,
+                pictures TEXT DEFAULT '',
+                work_time TEXT DEFAULT '',
+                owner_id INTEGER NOT NULL,
+                FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        """)
+
+        # Table dishes
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS dishes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                category TEXT NOT NULL,
+                pictures TEXT DEFAULT '',
+                restaurant_id INTEGER NOT NULL,
+                FOREIGN KEY (restaurant_id) REFERENCES restaurants(id) ON DELETE CASCADE
+            )
+        """)
+
         conn.commit()
         conn.close()
