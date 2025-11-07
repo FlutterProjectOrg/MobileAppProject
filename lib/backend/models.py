@@ -43,3 +43,39 @@ class DeliveryProfile(BaseModel):
     phone_number: str
     vehicle_type: str
     avatar_url: str = ""
+
+class WorkTime(BaseModel):
+    day: str  # "Monday", "Tuesday", etc.
+    open_time: str  # "09:00"
+    close_time: str  # "22:00"
+    is_closed: bool = False
+
+class Restaurant(BaseModel):
+    name: str
+    phone: str
+    adresse: str
+    pictures: List[str] = Field(default_factory=list)
+    work_time: List[WorkTime] = Field(default_factory=list)
+    owner_id: int  # Foreign key to User
+
+class RestaurantResponse(BaseModel):
+    id: int
+    name: str
+    phone: str
+    adresse: str
+    pictures: List[str]
+    work_time: List[WorkTime]
+    owner_id: int
+
+class Dish(BaseModel):
+    name: str
+    category: str
+    pictures: List[str] = Field(default_factory=list)
+    restaurant_id: int  # Foreign key to Restaurant
+
+class DishResponse(BaseModel):
+    id: int
+    name: str
+    category: str
+    pictures: List[str]
+    restaurant_id: int
