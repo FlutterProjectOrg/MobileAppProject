@@ -1,5 +1,13 @@
-import os
-from fastapi import FastAPI
+import o@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_db()  # Crée les tables si elles n'existent pas
+    yield
+
+# Create necessary directories
+os.makedirs("data/avatars", exist_ok=True)
+os.makedirs("data/restaurants", exist_ok=True)
+
+app = FastAPI(lifespan=lifespan)m fastapi import FastAPI
 from contextlib import asynccontextmanager
 
 from fastapi.staticfiles import StaticFiles

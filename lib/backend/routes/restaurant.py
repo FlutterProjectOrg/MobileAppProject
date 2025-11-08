@@ -1,10 +1,17 @@
 import json
+import os
+import base64
+from pathlib import Path
 from fastapi import APIRouter, HTTPException
 from typing import List
 from models import Restaurant, RestaurantResponse, WorkTime
 from db import get_db
 
 router = APIRouter(prefix="/restaurants", tags=["restaurants"])
+
+# Create restaurants directory if it doesn't exist
+RESTAURANTS_DIR = Path("data/restaurants")
+RESTAURANTS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 @router.post("/", response_model=RestaurantResponse, status_code=201)
@@ -24,10 +31,10 @@ def create_restaurant(restaurant: Restaurant):
         if user["role"] != "owner":
             raise HTTPException(status_code=403, detail="User must have 'owner' role to create a restaurant")
         
-        # Convert lists to JSON strings for storage
-        pictures_json = json.dumps(restaurant.pictures)
+        # Convert work_time to JSON string
         work_time_json = json.dumps([wt.dict() for wt in restaurant.work_time])
         
+        # First, insert the restaurant to get its ID
         cursor.execute("""
             INSERT INTO restaurants (name, phone, adresse, pictures, work_time, owner_id)
             VALUES (?, ?, ?, ?, ?, ?)
@@ -35,7 +42,7 @@ def create_restaurant(restaurant: Restaurant):
             restaurant.name,
             restaurant.phone,
             restaurant.adresse,
-            pictures_json,
+            '[]',  # Temporary empty pictures
             work_time_json,
             restaurant.owner_id
         ))
@@ -43,13 +50,54 @@ def create_restaurant(restaurant: Restaurant):
         conn.commit()
         restaurant_id = cursor.lastrowid
         
+        # Process and save images
+        saved_picture_paths = []
+        if restaurant.pictures:
+            # Create restaurant-specific directory: data/restaurants/res{id}/
+            restaurant_dir = RESTAURANTS_DIR / f"res{restaurant_id}"
+            restaurant_dir.mkdir(parents=True, exist_ok=True)
+            
+            for idx, pic_data_uri in enumerate(restaurant.pictures):
+                try:
+                    # Extract base64 data from data URI
+                    if pic_data_uri.startswith('data:image'):
+                        header, encoded = pic_data_uri.split(',', 1)
+                        image_data = base64.b64decode(encoded)
+                        
+                        # Determine file extension from header
+                        ext = 'jpg'
+                        if 'png' in header:
+                            ext = 'png'
+                        elif 'jpeg' in header or 'jpg' in header:
+                            ext = 'jpg'
+                        
+                        # Save image with naming: picture1, picture2, etc.
+                        filename = f"picture{idx + 1}.{ext}"
+                        file_path = restaurant_dir / filename
+                        with open(file_path, 'wb') as f:
+                            f.write(image_data)
+                        
+                        # Store relative path in database
+                        saved_picture_paths.append(f"/restaurants/res{restaurant_id}/{filename}")
+                
+                except Exception as e:
+                    print(f"Error saving image {idx}: {str(e)}")
+                    continue
+            
+            # Update restaurant with saved picture paths
+            pictures_json = json.dumps(saved_picture_paths)
+            cursor.execute("""
+                UPDATE restaurants SET pictures = ? WHERE id = ?
+            """, (pictures_json, restaurant_id))
+            conn.commit()
+        
         # Return the created restaurant
         return RestaurantResponse(
             id=restaurant_id,
             name=restaurant.name,
             phone=restaurant.phone,
             adresse=restaurant.adresse,
-            pictures=restaurant.pictures,
+            pictures=saved_picture_paths,
             work_time=restaurant.work_time,
             owner_id=restaurant.owner_id
         )

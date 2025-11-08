@@ -8,6 +8,8 @@ import 'package:mobile_app_project/Pages/HomeScreen.dart';
 import 'package:mobile_app_project/Pages/Auth/ProfileScreen.dart';
 import 'package:mobile_app_project/Pages/ReservationsScreen.dart';
 import 'package:mobile_app_project/Pages/RestaurantDetail.dart';
+import 'package:mobile_app_project/Pages/OwnerDashboard.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,14 +45,34 @@ class AppScreen extends StatefulWidget {
 class _AppScreenState extends State<AppScreen> {
   bool _isAuthenticated = false;
   String _currentScreen =
-      'home'; // 'home', 'favorites', 'reservations', 'profile'
+      'home'; // 'home', 'favorites', 'dashboard', 'reservations', 'profile'
   int? _selectedRestaurant;
   bool _showChatbot = false;
+  String? _userRole; // 'user', 'owner', 'delivery'
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserRole();
+  }
+
+  Future<void> _loadUserRole() async {
+    final prefs = await SharedPreferences.getInstance();
+    final role = prefs.getString('role');
+    if (mounted) {
+      setState(() {
+        _userRole = role;
+      });
+    }
+  }
 
   void _setAuthenticated(bool value) {
     setState(() {
       _isAuthenticated = value;
     });
+    if (value) {
+      _loadUserRole();
+    }
   }
 
   void _setCurrentScreen(String screen) {
@@ -113,6 +135,8 @@ class _AppScreenState extends State<AppScreen> {
         return HomeScreen(onRestaurantClick: _setSelectedRestaurant);
       case 'favorites':
         return FavoritesScreen(onRestaurantClick: _setSelectedRestaurant);
+      case 'dashboard':
+        return const OwnerDashboard();
       case 'reservations':
         return const ReservationsScreen();
       case 'profile':
@@ -147,11 +171,18 @@ class _AppScreenState extends State<AppScreen> {
                 label: 'Accueil',
                 screen: 'home',
               ),
-              _buildNavButton(
-                icon: Icons.favorite,
-                label: 'Favoris',
-                screen: 'favorites',
-              ),
+              // Show Dashboard for owners, Favorites for others
+              _userRole == 'owner'
+                  ? _buildNavButton(
+                      icon: Icons.dashboard,
+                      label: 'Tableau',
+                      screen: 'dashboard',
+                    )
+                  : _buildNavButton(
+                      icon: Icons.favorite,
+                      label: 'Favoris',
+                      screen: 'favorites',
+                    ),
               _buildChatbotButton(),
               _buildNavButton(
                 icon: Icons.calendar_today,
