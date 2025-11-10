@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:mobile_app_project/database/LocalDb.dart';
 import 'package:overlay_support/overlay_support.dart';
 import 'package:mobile_app_project/Pages/AICHATBOT.dart';
 import 'package:mobile_app_project/Pages/Auth/AuthScreen.dart';
@@ -14,6 +15,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // await SharedPreferences.getInstance();
+  await LocalDb.instance.init();
   await dotenv.load(fileName: ".env");
   runApp(OverlaySupport.global(child: MyApp()));
 }

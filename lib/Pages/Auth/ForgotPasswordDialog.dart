@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:mobile_app_project/services/Auth/auth_service.dart';
+import 'package:mobile_app_project/services/Auth/LocalAuthService.dart';
 
 enum ForgotPasswordStep { email, verification, newPassword, success }
 
@@ -16,7 +16,8 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
-  final _authService = AuthService();
+  //final _authService = AuthService();
+  final _authService = LocalAuthService.instance;
   ForgotPasswordStep _currentStep = ForgotPasswordStep.email;
   final _emailController = TextEditingController();
   final _newPasswordController = TextEditingController();

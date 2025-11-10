@@ -1,8 +1,8 @@
-import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:mobile_app_project/services/Auth/auth_service.dart';
+import 'package:mobile_app_project/services/Auth/LocalAuthService.dart';
 import 'package:mobile_app_project/services/Auth/biometric_service.dart';
 import 'package:mobile_app_project/services/Auth/storage_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -22,7 +22,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _darkModeEnabled = false;
   bool _dietaryRestrictions = false;
   double _budgetValue = 25;
-  final _authService = AuthService();
+  // final _authService = AuthService();
+  final _authService = LocalAuthService.instance;
   UserProfile? _userProfile;
   DeliveryProfile? _deliveryProfile;
   OwnerProfile? _ownerProfile;
@@ -557,23 +558,108 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return first.substring(0, 1).toUpperCase();
   }
 
+  // ImageProvider<Object>? _avatarImageProvider() {
+  //   String? avatar;
+
+  //   if (_userProfile?.avatarUrl != null) {
+  //     avatar = _userProfile?.avatarUrl;
+  //   } else if (_deliveryProfile?.avatarUrl != null) {
+  //     avatar = _deliveryProfile?.avatarUrl;
+  //   } else if (_ownerProfile?.avatarUrl != null) {
+  //     avatar = _ownerProfile?.avatarUrl;
+  //   }
+
+  //   if (avatar == null || avatar.trim().isEmpty) return null;
+  //   if (avatar.startsWith('/')) {
+  //     return NetworkImage('${AuthService.baseUrl}$avatar');
+  //   }
+  //   return NetworkImage(avatar);
+  // }
+
   ImageProvider<Object>? _avatarImageProvider() {
     String? avatar;
 
     if (_userProfile?.avatarUrl != null) {
+      // Changed from avatarUrl
       avatar = _userProfile?.avatarUrl;
     } else if (_deliveryProfile?.avatarUrl != null) {
+      // Changed from avatarUrl
       avatar = _deliveryProfile?.avatarUrl;
     } else if (_ownerProfile?.avatarUrl != null) {
+      // Changed from avatarUrl
       avatar = _ownerProfile?.avatarUrl;
     }
 
     if (avatar == null || avatar.trim().isEmpty) return null;
-    if (avatar.startsWith('/')) {
-      return NetworkImage('${AuthService.baseUrl}$avatar');
-    }
-    return NetworkImage(avatar);
+
+    // Local file path (not HTTP)
+    return FileImage(File(avatar));
   }
+
+  // Future<void> _pickAndUploadAvatar() async {
+  //   if (_userId == null) return;
+  //   final picker = ImagePicker();
+  //   final XFile? file = await picker.pickImage(
+  //     source: ImageSource.gallery,
+  //     imageQuality: 80,
+  //   );
+  //   if (file == null) return;
+
+  //   final bytes = await file.readAsBytes();
+  //   final base64Image = base64Encode(bytes);
+  //   final dataUri = 'data:image/png;base64,$base64Image';
+  //   String? uploadedUrl;
+
+  //   if (_role == 'user') {
+  //     uploadedUrl = await _authService.uploadAvatar(_userId!, dataUri);
+  //   } else if (_role == 'owner') {
+  //     uploadedUrl = await _authService.uploadOwnerAvatar(_userId!, dataUri);
+  //   } else if (_role == 'delivery') {
+  //     uploadedUrl = await _authService.uploadDeliveryAvatar(_userId!, dataUri);
+  //   }
+
+  //   if (uploadedUrl != null) {
+  //     setState(() {
+  //       if (_userProfile != null) {
+  //         _userProfile = UserProfile(
+  //           id: _userProfile!.id,
+  //           email: _userProfile!.email,
+  //           name: _userProfile!.name,
+  //           location: _userProfile!.location,
+  //           cuisinePreferences: _userProfile!.cuisinePreferences,
+  //           budget: _userProfile!.budget,
+  //           dietaryRestrictions: _userProfile!.dietaryRestrictions,
+  //           notificationsEnabled: _userProfile!.notificationsEnabled,
+  //           darkModeEnabled: _userProfile!.darkModeEnabled,
+  //           avatarUrl: uploadedUrl,
+  //         );
+  //       } else if (_deliveryProfile != null) {
+  //         _deliveryProfile = DeliveryProfile(
+  //           id: _deliveryProfile!.id,
+  //           email: _deliveryProfile!.email,
+  //           name: _deliveryProfile!.name,
+  //           phoneNumber: _deliveryProfile!.phoneNumber,
+  //           vehicleType: _deliveryProfile!.vehicleType,
+  //           avatarUrl: uploadedUrl,
+  //         );
+  //       } else if (_ownerProfile != null) {
+  //         _ownerProfile = OwnerProfile(
+  //           id: _ownerProfile!.id,
+  //           email: _ownerProfile!.email,
+  //           name: _ownerProfile!.name,
+  //           restaurantName: _ownerProfile!.restaurantName,
+  //           restaurantAddress: _ownerProfile!.restaurantAddress,
+  //           cuisineTypes: _ownerProfile!.cuisineTypes,
+  //           avatarUrl: uploadedUrl,
+  //         );
+  //       }
+  //       _avatarUrl = uploadedUrl;
+  //     });
+  //     _showSuccessSnackBar("Avatar uploaded successfully");
+  //   } else {
+  //     _showErrorSnackBar("Failed to upload avatar");
+  //   }
+  // }
 
   Future<void> _pickAndUploadAvatar() async {
     if (_userId == null) return;
@@ -585,19 +671,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (file == null) return;
 
     final bytes = await file.readAsBytes();
-    final base64Image = base64Encode(bytes);
-    final dataUri = 'data:image/png;base64,$base64Image';
-    String? uploadedUrl;
+    String? uploadedPath;
 
     if (_role == 'user') {
-      uploadedUrl = await _authService.uploadAvatar(_userId!, dataUri);
+      uploadedPath = await _authService.uploadAvatar(_userId!, bytes);
     } else if (_role == 'owner') {
-      uploadedUrl = await _authService.uploadOwnerAvatar(_userId!, dataUri);
+      uploadedPath = await _authService.uploadOwnerAvatar(_userId!, bytes);
     } else if (_role == 'delivery') {
-      uploadedUrl = await _authService.uploadDeliveryAvatar(_userId!, dataUri);
+      uploadedPath = await _authService.uploadDeliveryAvatar(_userId!, bytes);
     }
 
-    if (uploadedUrl != null) {
+    if (uploadedPath != null) {
       setState(() {
         if (_userProfile != null) {
           _userProfile = UserProfile(
@@ -610,7 +694,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             dietaryRestrictions: _userProfile!.dietaryRestrictions,
             notificationsEnabled: _userProfile!.notificationsEnabled,
             darkModeEnabled: _userProfile!.darkModeEnabled,
-            avatarUrl: uploadedUrl,
+            avatarUrl: uploadedPath, // Changed from avatarUrl
           );
         } else if (_deliveryProfile != null) {
           _deliveryProfile = DeliveryProfile(
@@ -619,7 +703,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             name: _deliveryProfile!.name,
             phoneNumber: _deliveryProfile!.phoneNumber,
             vehicleType: _deliveryProfile!.vehicleType,
-            avatarUrl: uploadedUrl,
+            avatarUrl: uploadedPath,
+            // Changed from avatarUrl
           );
         } else if (_ownerProfile != null) {
           _ownerProfile = OwnerProfile(
@@ -629,10 +714,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             restaurantName: _ownerProfile!.restaurantName,
             restaurantAddress: _ownerProfile!.restaurantAddress,
             cuisineTypes: _ownerProfile!.cuisineTypes,
-            avatarUrl: uploadedUrl,
+            avatarUrl: uploadedPath, // Changed from avatarUrl
           );
         }
-        _avatarUrl = uploadedUrl;
+        _avatarUrl = uploadedPath;
       });
       _showSuccessSnackBar("Avatar uploaded successfully");
     } else {

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:mobile_app_project/Pages/Auth/ForgotPasswordDialog.dart';
-import 'package:mobile_app_project/services/Auth/auth_service.dart';
+import 'package:mobile_app_project/services/Auth/LocalAuthService.dart';
+import 'package:mobile_app_project/services/Auth/LocalGoogleAuth.dart';
 import 'package:mobile_app_project/services/Auth/biometric_service.dart';
-import 'package:mobile_app_project/services/Auth/google_auth_service.dart';
 import 'package:mobile_app_project/services/Auth/storage_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -18,7 +18,8 @@ class AuthScreen extends StatefulWidget {
 
 class _AuthScreenState extends State<AuthScreen>
     with SingleTickerProviderStateMixin {
-  final _authService = AuthService();
+  // final _authService = AuthService();
+  final _authService = LocalAuthService.instance;
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -740,7 +741,7 @@ class _AuthScreenState extends State<AuthScreen>
   Future<void> _handleGoogleSignIn() async {
     setState(() => _isLoading = true);
 
-    final googleAuth = GoogleAuthService();
+    final googleAuth = LocalGoogleAuth();
     final user = await googleAuth.signInWithGoogle();
 
     setState(() => _isLoading = false);
