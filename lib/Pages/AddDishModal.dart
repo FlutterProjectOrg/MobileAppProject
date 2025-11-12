@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:mobile_app_project/services/Restaurant/DishService.dart';
 
 class AddDishModal extends StatefulWidget {
   final int restaurantId;
@@ -23,6 +21,8 @@ class _AddDishModalState extends State<AddDishModal> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _categoryController = TextEditingController();
+  final _priceController = TextEditingController();
+  final _preparationTimeController = TextEditingController();
   bool _isSubmitting = false;
 
   // Pictures state
@@ -52,6 +52,8 @@ class _AddDishModalState extends State<AddDishModal> {
   void dispose() {
     _nameController.dispose();
     _categoryController.dispose();
+    _priceController.dispose();
+    _preparationTimeController.dispose();
     super.dispose();
   }
 
@@ -65,43 +67,38 @@ class _AddDishModalState extends State<AddDishModal> {
     });
 
     try {
-      final baseUrl = dotenv.env['DB_URL'] ?? 'http://localhost:8000';
-
-      // Convert images to base64
-      List<String> pictureDataUris = [];
+      // Store image paths (local paths)
+      List<String> picturePaths = [];
       for (var imageFile in _selectedImages) {
-        final bytes = await imageFile.readAsBytes();
-        final base64Image = base64Encode(bytes);
-        pictureDataUris.add('data:image/jpeg;base64,$base64Image');
+        picturePaths.add(imageFile.path);
       }
 
       final category = _selectedCategory ?? _categoryController.text.trim();
 
-      final response = await http.post(
-        Uri.parse('$baseUrl/dishes/'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'name': _nameController.text.trim(),
-          'category': category,
-          'pictures': pictureDataUris,
-          'restaurant_id': widget.restaurantId,
-        }),
-      );
+      // Parse price
+      final price = double.tryParse(_priceController.text.trim()) ?? 0.0;
+
+      // Create dish using local SQLite service
+      final dishData = {
+        'name': _nameController.text.trim(),
+        'category': category,
+        'price': price,
+        'preparation_time': _preparationTimeController.text.trim(),
+        'pictures': picturePaths,
+        'restaurant_id': widget.restaurantId,
+      };
+
+      await DishService.instance.createDish(dishData);
 
       if (mounted) {
         setState(() {
           _isSubmitting = false;
         });
 
-        if (response.statusCode == 201) {
-          // Success
-          widget.onDishAdded();
-          Navigator.of(context).pop();
-          _showSuccessSnackBar('Plat créé avec succès!');
-        } else {
-          // Error
-          _showErrorSnackBar('Erreur lors de la création du plat');
-        }
+        // Success
+        widget.onDishAdded();
+        Navigator.of(context).pop();
+        _showSuccessSnackBar('Plat créé avec succès!');
       }
     } catch (e) {
       debugPrint('Error creating dish: $e');
@@ -109,7 +106,7 @@ class _AddDishModalState extends State<AddDishModal> {
         setState(() {
           _isSubmitting = false;
         });
-        _showErrorSnackBar('Erreur de connexion au serveur');
+        _showErrorSnackBar('Erreur lors de la création du plat: ${e.toString()}');
       }
     }
   }
@@ -304,6 +301,90 @@ class _AddDishModalState extends State<AddDishModal> {
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Veuillez sélectionner une catégorie';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Price field
+                    const Text(
+                      'Prix (€)',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1F2937),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _priceController,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: InputDecoration(
+                        hintText: 'Ex: 12.50',
+                        prefixIcon: const Icon(Icons.euro, color: Color(0xFF10B981)),
+                        suffixText: '€',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Color(0xFF10B981), width: 2),
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey[50],
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Veuillez entrer le prix';
+                        }
+                        final price = double.tryParse(value.trim());
+                        if (price == null || price < 0) {
+                          return 'Veuillez entrer un prix valide';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Preparation time field
+                    const Text(
+                      'Temps de préparation',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1F2937),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _preparationTimeController,
+                      decoration: InputDecoration(
+                        hintText: 'Ex: 15 min',
+                        prefixIcon: const Icon(Icons.access_time, color: Color(0xFF10B981)),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Color(0xFF10B981), width: 2),
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey[50],
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Veuillez entrer le temps de préparation';
                         }
                         return null;
                       },

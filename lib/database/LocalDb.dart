@@ -15,7 +15,7 @@ class LocalDb {
 
     _db = await openDatabase(
       path,
-      version: 3,
+      version: 5,
       onCreate: (db, version) async {
         await db.execute("""
           CREATE TABLE users (
@@ -75,6 +75,8 @@ class LocalDb {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             category TEXT NOT NULL,
+            price REAL NOT NULL DEFAULT 0.0,
+            preparation_time TEXT DEFAULT '',
             pictures TEXT DEFAULT '[]',
             restaurant_id INTEGER NOT NULL,
             FOREIGN KEY (restaurant_id) REFERENCES restaurants(id) ON DELETE CASCADE
@@ -87,8 +89,86 @@ class LocalDb {
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
           )
         """);
+        await db.execute("""
+          CREATE TABLE reviews (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            restaurant_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            rating REAL CHECK (rating >= 0 AND rating <= 5),
+            comment TEXT DEFAULT '',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (restaurant_id) REFERENCES restaurants(id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            UNIQUE(restaurant_id, user_id)
+          )
+        """);
+        await db.execute("""
+          CREATE TABLE restaurant_ratings (
+            restaurant_id INTEGER PRIMARY KEY,
+            average_rating REAL DEFAULT 0.0,
+            total_reviews INTEGER DEFAULT 0,
+            FOREIGN KEY (restaurant_id) REFERENCES restaurants(id) ON DELETE CASCADE
+          )
+        """);
       },
       onUpgrade: (db, oldV, newV) async {
+        // Migration for version 4: Add price and preparation_time to dishes
+        if (oldV < 4) {
+          final dishCols = await db.rawQuery("PRAGMA table_info(dishes)");
+          final dishColNames = dishCols.map((e) => e['name']).toSet();
+          
+          if (!dishColNames.contains('price')) {
+            await db.execute(
+              "ALTER TABLE dishes ADD COLUMN price REAL NOT NULL DEFAULT 0.0",
+            );
+          }
+          if (!dishColNames.contains('preparation_time')) {
+            await db.execute(
+              "ALTER TABLE dishes ADD COLUMN preparation_time TEXT DEFAULT ''",
+            );
+          }
+        }
+        
+        // Migration for version 5: Add reviews and restaurant_ratings tables
+        if (oldV < 5) {
+          // Check if reviews table exists
+          final tables = await db.rawQuery(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='reviews'",
+          );
+          
+          if (tables.isEmpty) {
+            await db.execute("""
+              CREATE TABLE reviews (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                restaurant_id INTEGER NOT NULL,
+                user_id INTEGER NOT NULL,
+                rating REAL CHECK (rating >= 0 AND rating <= 5),
+                comment TEXT DEFAULT '',
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (restaurant_id) REFERENCES restaurants(id) ON DELETE CASCADE,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                UNIQUE(restaurant_id, user_id)
+              )
+            """);
+          }
+          
+          // Check if restaurant_ratings table exists
+          final ratingsTables = await db.rawQuery(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='restaurant_ratings'",
+          );
+          
+          if (ratingsTables.isEmpty) {
+            await db.execute("""
+              CREATE TABLE restaurant_ratings (
+                restaurant_id INTEGER PRIMARY KEY,
+                average_rating REAL DEFAULT 0.0,
+                total_reviews INTEGER DEFAULT 0,
+                FOREIGN KEY (restaurant_id) REFERENCES restaurants(id) ON DELETE CASCADE
+              )
+            """);
+          }
+        }
+        
         // Exemple migration légère (ajouts futurs)
         final cols = await db.rawQuery("PRAGMA table_info(user_profiles)");
         final names = cols.map((e) => e['name']).toSet();

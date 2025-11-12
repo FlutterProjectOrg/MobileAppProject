@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:mobile_app_project/Pages/UI/PhoneInputField.dart';
 import 'package:mobile_app_project/Pages/UI/AddressInputField.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:mobile_app_project/services/Restaurant/RestaurantService.dart';
 
 class AddRestaurantModal extends StatefulWidget {
   final int ownerId;
@@ -84,7 +82,6 @@ class _AddRestaurantModalState extends State<AddRestaurantModal> {
     });
 
     try {
-      final baseUrl = dotenv.env['DB_URL'] ?? 'http://localhost:8000';
       // Build complete address
       final addressParts = <String>[_addressController.text.trim()];
       if (_selectedState != null) addressParts.add(_selectedState!);
@@ -101,41 +98,33 @@ class _AddRestaurantModalState extends State<AddRestaurantModal> {
         };
       }).toList();
 
-      // Convert images to base64
-      List<String> pictureDataUris = [];
+      // Store image paths (local paths)
+      List<String> picturePaths = [];
       for (var imageFile in _selectedImages) {
-        final bytes = await imageFile.readAsBytes();
-        final base64Image = base64Encode(bytes);
-        pictureDataUris.add('data:image/jpeg;base64,$base64Image');
+        picturePaths.add(imageFile.path);
       }
 
-      final response = await http.post(
-        Uri.parse('$baseUrl/restaurants/'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'name': _nameController.text.trim(),
-          'phone': '${_selectedCountry.dialCode} ${_phoneController.text.trim()}',
-          'adresse': fullAddress,
-          'pictures': pictureDataUris,
-          'work_time': workTimeList,
-          'owner_id': widget.ownerId,
-        }),
-      );
+      // Create restaurant using local SQLite service
+      final restaurantData = {
+        'name': _nameController.text.trim(),
+        'phone': '${_selectedCountry.dialCode} ${_phoneController.text.trim()}',
+        'adresse': fullAddress,
+        'pictures': picturePaths,
+        'work_time': workTimeList,
+        'owner_id': widget.ownerId,
+      };
+
+      await RestaurantService.instance.createRestaurant(restaurantData);
 
       if (mounted) {
         setState(() {
           _isSubmitting = false;
         });
 
-        if (response.statusCode == 201) {
-          // Success
-          widget.onRestaurantAdded();
-          Navigator.of(context).pop();
-          _showSuccessSnackBar('Restaurant créé avec succès!');
-        } else {
-          // Error
-          _showErrorSnackBar('Erreur lors de la création du restaurant');
-        }
+        // Success
+        widget.onRestaurantAdded();
+        Navigator.of(context).pop();
+        _showSuccessSnackBar('Restaurant créé avec succès!');
       }
     } catch (e) {
       debugPrint('Error creating restaurant: $e');
@@ -143,7 +132,7 @@ class _AddRestaurantModalState extends State<AddRestaurantModal> {
         setState(() {
           _isSubmitting = false;
         });
-        _showErrorSnackBar('Erreur de connexion au serveur');
+        _showErrorSnackBar('Erreur lors de la création du restaurant: ${e.toString()}');
       }
     }
   }
