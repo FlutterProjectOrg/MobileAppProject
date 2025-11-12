@@ -3,9 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mobile_app_project/services/Auth/auth_service.dart';
 import 'package:mobile_app_project/Pages/AddRestaurantModal.dart';
 import 'package:mobile_app_project/Pages/RestaurantDetailOwner.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:mobile_app_project/services/Restaurant/RestaurantService.dart';
 
 class OwnerDashboard extends StatefulWidget {
   const OwnerDashboard({Key? key}) : super(key: key);
@@ -76,25 +74,14 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
 
   Future<void> _loadRestaurants(int ownerId) async {
     try {
-      final baseUrl = dotenv.env['DB_URL'] ?? 'http://localhost:8000';
-      final response = await http.get(
-        Uri.parse('$baseUrl/restaurants/owner/$ownerId'),
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        if (mounted) {
-          setState(() {
-            _restaurants = data.map((json) => Restaurant.fromJson(json)).toList();
-            _isLoading = false;
-          });
-        }
-      } else {
-        if (mounted) {
-          setState(() {
-            _isLoading = false;
-          });
-        }
+      // Fetch restaurants from local SQLite database
+      final data = await RestaurantService.instance.getRestaurantsByOwner(ownerId);
+      
+      if (mounted) {
+        setState(() {
+          _restaurants = data.map((json) => Restaurant.fromJson(json)).toList();
+          _isLoading = false;
+        });
       }
     } catch (e) {
       debugPrint('Error loading restaurants: $e');

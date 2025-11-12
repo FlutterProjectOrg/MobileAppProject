@@ -9,6 +9,8 @@ class DishService {
     final db = LocalDb.instance.db;
     final name = data['name'] as String;
     final category = data['category'] as String;
+    final price = (data['price'] as num?)?.toDouble() ?? 0.0;
+    final preparationTime = data['preparation_time'] as String? ?? '';
     final restaurantId = data['restaurant_id'] as int;
     final pictures = (data['pictures'] as List?)?.cast<String>() ?? [];
     final picsJson = jsonEncode(pictures);
@@ -16,6 +18,8 @@ class DishService {
     final id = await db.insert('dishes', {
       'name': name,
       'category': category,
+      'price': price,
+      'preparation_time': preparationTime,
       'pictures': picsJson,
       'restaurant_id': restaurantId,
     });
@@ -74,6 +78,8 @@ class DishService {
       {
         'name': data['name'],
         'category': data['category'],
+        'price': (data['price'] as num?)?.toDouble() ?? 0.0,
+        'preparation_time': data['preparation_time'] ?? '',
         'pictures': picsJson,
         'restaurant_id': data['restaurant_id'],
       },
@@ -95,6 +101,8 @@ class DishService {
       'id': row['id'],
       'name': row['name'],
       'category': row['category'],
+      'price': row['price'] ?? 0.0,
+      'preparation_time': row['preparation_time'] ?? '',
       'pictures': List<String>.from(jsonDecode(picsStr)),
       'restaurant_id': row['restaurant_id'],
     };

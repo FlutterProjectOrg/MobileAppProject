@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_app_project/Pages/mock_data.dart';
+import 'dart:io';
 
 class RestaurantCard extends StatefulWidget {
   final Restaurant restaurant;
@@ -53,24 +54,7 @@ class _RestaurantCardState extends State<RestaurantCard> {
           ),
           child: Stack(
             children: [
-              Image.network(
-                widget.restaurant.image,
-                width: double.infinity,
-                height: 192,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    width: double.infinity,
-                    height: 192,
-                    color: Colors.grey[300],
-                    child: Icon(
-                      Icons.restaurant,
-                      size: 60,
-                      color: Colors.grey[500],
-                    ),
-                  );
-                },
-              ),
+              _buildRestaurantImage(),
               // Gradient overlay
               Container(
                 width: double.infinity,
@@ -275,6 +259,109 @@ class _RestaurantCardState extends State<RestaurantCard> {
                   ],
                 ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRestaurantImage() {
+    final imagePath = widget.restaurant.image;
+
+    if (imagePath.isEmpty) {
+      return Container(
+        width: double.infinity,
+        height: 192,
+        color: Colors.grey[300],
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.restaurant,
+              size: 60,
+              color: Colors.grey[500],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Image non disponible',
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Check if it's a local file
+    if (!imagePath.startsWith('http')) {
+      final file = File(imagePath);
+      if (file.existsSync()) {
+        return Image.file(
+          file,
+          width: double.infinity,
+          height: 192,
+          fit: BoxFit.cover,
+        );
+      }
+    }
+
+    // Try loading as network image
+    if (imagePath.startsWith('http')) {
+      return Image.network(
+        imagePath,
+        width: double.infinity,
+        height: 192,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            width: double.infinity,
+            height: 192,
+            color: Colors.grey[300],
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.broken_image,
+                  size: 60,
+                  color: Colors.grey[500],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Image non disponible',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    }
+
+    // Fallback
+    return Container(
+      width: double.infinity,
+      height: 192,
+      color: Colors.grey[300],
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.restaurant,
+            size: 60,
+            color: Colors.grey[500],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Image non disponible',
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontSize: 12,
+            ),
           ),
         ],
       ),

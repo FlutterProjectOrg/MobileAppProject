@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:mobile_app_project/Pages/FilterSheet.dart';
 import 'package:mobile_app_project/Pages/RestaurantCard.dart';
 import 'package:mobile_app_project/Pages/mock_data.dart';
+import 'package:mobile_app_project/services/Review/ReviewService.dart';
+import 'dart:convert';
 
 class HomeScreen extends StatefulWidget {
   final Function(int) onRestaurantClick;
@@ -17,6 +19,8 @@ class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
   bool _showFilters = false;
   bool _showMap = false;
+  bool _isLoading = true;
+  List<Restaurant> _restaurants = [];
 
   RestaurantFilters _filters = RestaurantFilters(
     cuisine: [],
@@ -33,6 +37,62 @@ class _HomeScreenState extends State<HomeScreen> {
     'Mexicain',
     'Chinois',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRestaurants();
+  }
+
+  Future<void> _loadRestaurants() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final restaurantsData = await ReviewService.instance.getRestaurantsWithRatings();
+      
+      final restaurants = restaurantsData.map((data) {
+        // Parse pictures JSON
+        final picturesStr = (data['pictures'] as String?) ?? '[]';
+        final picturesList = List<String>.from(jsonDecode(picturesStr));
+        final imageUrl = picturesList.isNotEmpty 
+            ? picturesList[0] 
+            : 'https://via.placeholder.com/400x200?text=Restaurant';
+
+        // Get rating data
+        final averageRating = (data['average_rating'] as num?)?.toDouble() ?? 0.0;
+        final totalReviews = (data['total_reviews'] as int?) ?? 0;
+
+        return Restaurant(
+          id: data['id'] as int,
+          name: data['name'] as String,
+          cuisine: 'Cuisine variée', // Default cuisine type
+          rating: averageRating,
+          reviews: totalReviews,
+          distance: '1.5 km', // Default distance
+          priceRange: '€€', // Default price range
+          image: imageUrl,
+          isOpen: true, // Default to open
+          openUntil: '22:00',
+        );
+      }).toList();
+
+      if (mounted) {
+        setState(() {
+          _restaurants = restaurants;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading restaurants: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -350,26 +410,70 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildRestaurantList() {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Text(
-            '${mockRestaurants.length} restaurants trouvés',
-            style: TextStyle(color: Colors.grey[600], fontSize: 14),
-          ),
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(
+          color: Color(0xFF3B82F6),
         ),
-        ...mockRestaurants.map(
-          (restaurant) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: RestaurantCard(
-              restaurant: restaurant,
-              onClick: () => widget.onRestaurantClick(restaurant.id),
+      );
+    }
+
+    if (_restaurants.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.restaurant_menu,
+              size: 64,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Aucun restaurant disponible',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Revenez plus tard ou ajoutez-en un',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[500],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _loadRestaurants,
+      color: const Color(0xFF3B82F6),
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Text(
+              '${_restaurants.length} restaurant${_restaurants.length > 1 ? 's' : ''} trouvé${_restaurants.length > 1 ? 's' : ''}',
+              style: TextStyle(color: Colors.grey[600], fontSize: 14),
             ),
           ),
-        ),
-      ],
+          ..._restaurants.map(
+            (restaurant) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: RestaurantCard(
+                restaurant: restaurant,
+                onClick: () => widget.onRestaurantClick(restaurant.id),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
