@@ -1,178 +1,115 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_app_project/Pages/UI/AppColors.dart';
 
-class Menubar extends StatelessWidget {
-  final List<Widget> children;
-  const Menubar({Key? key, required this.children}) : super(key: key);
+class MenuBar extends StatelessWidget {
+  final List<MenuBarItem> items;
+
+  const MenuBar({Key? key, required this.items}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      height: 36,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.background,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: Colors.grey.shade300),
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 2)],
+        color: Colors.white,
+        border: Border(
+          bottom: BorderSide(color: AppColors.primaryOrange.withOpacity(0.2)),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryOrange.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: Row(mainAxisSize: MainAxisSize.min, children: children),
+      child: Row(
+        children: items.map((item) {
+          return _buildMenuItem(context, item);
+        }).toList(),
+      ),
     );
   }
-}
 
-class MenubarItem extends StatelessWidget {
-  final Widget child;
-  final bool destructive;
-  final VoidCallback? onPressed;
-
-  const MenubarItem({
-    Key? key,
-    required this.child,
-    this.destructive = false,
-    this.onPressed,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    final textColor = destructive ? Colors.red : Colors.black87;
-
-    return InkWell(
-      onTap: onPressed,
-      borderRadius: BorderRadius.circular(4),
-      hoverColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-        child: DefaultTextStyle(
-          style: TextStyle(color: textColor, fontSize: 14),
-          child: child,
+  Widget _buildMenuItem(BuildContext context, MenuBarItem item) {
+    return PopupMenuButton(
+      offset: const Offset(0, 8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: Colors.white,
+      elevation: 8,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Row(
+          children: [
+            if (item.icon != null) ...[
+              Icon(item.icon, size: 18, color: AppColors.primaryOrange),
+              const SizedBox(width: 8),
+            ],
+            Text(
+              item.label,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ],
         ),
       ),
+      itemBuilder: (context) {
+        return item.children.map((child) {
+          return PopupMenuItem(
+            onTap: child.onTap,
+            child: Row(
+              children: [
+                if (child.icon != null) ...[
+                  Icon(child.icon, size: 16, color: AppColors.primaryOrange),
+                  const SizedBox(width: 12),
+                ],
+                Expanded(
+                  child: Text(
+                    child.label,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ),
+                if (child.shortcut != null)
+                  Text(
+                    child.shortcut!,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+              ],
+            ),
+          );
+        }).toList();
+      },
     );
   }
 }
 
-class MenubarSub extends StatelessWidget {
-  final Widget trigger;
-  final List<Widget> children;
+class MenuBarItem {
+  final String label;
+  final IconData? icon;
+  final List<MenuBarChild> children;
 
-  const MenubarSub({Key? key, required this.trigger, required this.children})
-    : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return PopupMenuButton<int>(
-      offset: const Offset(0, 0),
-      child: trigger,
-      itemBuilder: (context) => children
-          .asMap()
-          .entries
-          .map(
-            (entry) => PopupMenuItem<int>(value: entry.key, child: entry.value),
-          )
-          .toList(),
-    );
-  }
+  MenuBarItem({required this.label, this.icon, required this.children});
 }
 
-class MenubarCheckboxItem extends StatelessWidget {
-  final bool checked;
-  final Widget child;
-  final ValueChanged<bool?>? onChanged;
+class MenuBarChild {
+  final String label;
+  final IconData? icon;
+  final String? shortcut;
+  final VoidCallback onTap;
 
-  const MenubarCheckboxItem({
-    Key? key,
-    required this.checked,
-    required this.child,
-    this.onChanged,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () => onChanged?.call(!checked),
-      child: Row(
-        children: [
-          Checkbox(value: checked, onChanged: onChanged),
-          child,
-        ],
-      ),
-    );
-  }
-}
-
-class MenubarRadioItem<T> extends StatelessWidget {
-  final T value;
-  final T groupValue;
-  final Widget child;
-  final ValueChanged<T?>? onChanged;
-
-  const MenubarRadioItem({
-    Key? key,
-    required this.value,
-    required this.groupValue,
-    required this.child,
-    this.onChanged,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () => onChanged?.call(value),
-      child: Row(
-        children: [
-          Radio<T>(value: value, groupValue: groupValue, onChanged: onChanged),
-          child,
-        ],
-      ),
-    );
-  }
-}
-
-class MenubarSeparator extends StatelessWidget {
-  const MenubarSeparator({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return const SizedBox(
-      height: 1,
-      child: Divider(height: 1, thickness: 1, color: Colors.grey),
-    );
-  }
-}
-
-class MenubarLabel extends StatelessWidget {
-  final String text;
-  final bool inset;
-
-  const MenubarLabel({Key? key, required this.text, this.inset = false})
-    : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(left: inset ? 16 : 0),
-      child: Text(
-        text,
-        style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
-      ),
-    );
-  }
-}
-
-class MenubarShortcut extends StatelessWidget {
-  final String shortcut;
-
-  const MenubarShortcut({Key? key, required this.shortcut}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      shortcut,
-      style: const TextStyle(
-        fontSize: 12,
-        color: Colors.grey,
-        letterSpacing: 1.5,
-      ),
-    );
-  }
+  MenuBarChild({
+    required this.label,
+    this.icon,
+    this.shortcut,
+    required this.onTap,
+  });
 }

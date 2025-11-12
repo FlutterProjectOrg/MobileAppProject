@@ -1,65 +1,71 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_app_project/Pages/UI/AppColors.dart';
 
 class HoverCard extends StatefulWidget {
-  final Widget trigger;
-  final Widget content;
-  final Alignment align;
-  final double sideOffset;
+  final Widget child;
+  final Widget hoverContent;
+  final Duration delay;
 
   const HoverCard({
-    super.key,
-    required this.trigger,
-    required this.content,
-    this.align = Alignment.center,
-    this.sideOffset = 4.0,
-  });
+    Key? key,
+    required this.child,
+    required this.hoverContent,
+    this.delay = const Duration(milliseconds: 300),
+  }) : super(key: key);
 
   @override
   State<HoverCard> createState() => _HoverCardState();
 }
 
 class _HoverCardState extends State<HoverCard> {
-  final LayerLink _layerLink = LayerLink();
-  OverlayEntry? _overlayEntry;
-
-  void _showHoverCard() {
-    _overlayEntry = OverlayEntry(
-      builder: (context) => Positioned(
-        width: 256, // équivalent à w-64
-        child: CompositedTransformFollower(
-          link: _layerLink,
-          offset: Offset(0, widget.sideOffset),
-          showWhenUnlinked: false,
-          child: Material(
-            color: Colors.white,
-            elevation: 8,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-              side: BorderSide(color: Colors.grey.shade300),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: widget.content,
-            ),
-          ),
-        ),
-      ),
-    );
-
-    Overlay.of(context).insert(_overlayEntry!);
-  }
-
-  void _hideHoverCard() {
-    _overlayEntry?.remove();
-    _overlayEntry = null;
-  }
+  bool _isHovered = false;
 
   @override
   Widget build(BuildContext context) {
     return MouseRegion(
-      onEnter: (_) => _showHoverCard(),
-      onExit: (_) => _hideHoverCard(),
-      child: CompositedTransformTarget(link: _layerLink, child: widget.trigger),
+      onEnter: (_) {
+        Future.delayed(widget.delay, () {
+          if (mounted) {
+            setState(() => _isHovered = true);
+          }
+        });
+      },
+      onExit: (_) {
+        setState(() => _isHovered = false);
+      },
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          widget.child,
+          if (_isHovered)
+            Positioned(
+              top: -8,
+              left: 0,
+              child: Material(
+                elevation: 8,
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: AppColors.primaryOrange.withOpacity(0.2),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primaryOrange.withOpacity(0.15),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: widget.hoverContent,
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

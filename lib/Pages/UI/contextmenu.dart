@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_app_project/Pages/UI/AppColors.dart';
 
 class ContextMenuExample extends StatelessWidget {
   const ContextMenuExample({Key? key}) : super(key: key);
@@ -120,4 +121,94 @@ class ContextMenuButton extends StatelessWidget {
           }).toList(),
     );
   }
+}
+
+class ContextMenu extends StatelessWidget {
+  final Widget child;
+  final List<ContextMenuItem> items;
+
+  const ContextMenu({Key? key, required this.child, required this.items})
+    : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onLongPress: () => _showContextMenu(context),
+      child: child,
+    );
+  }
+
+  void _showContextMenu(BuildContext context) {
+    final RenderBox renderBox = context.findRenderObject() as RenderBox;
+    final offset = renderBox.localToGlobal(Offset.zero);
+
+    showMenu(
+      context: context,
+      position: RelativeRect.fromLTRB(
+        offset.dx,
+        offset.dy + renderBox.size.height,
+        offset.dx + renderBox.size.width,
+        offset.dy,
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 8,
+      color: Colors.white,
+      items: items.map((item) {
+        return PopupMenuItem(
+          onTap: item.onTap,
+          child: Row(
+            children: [
+              if (item.icon != null)
+                ...([
+                  Icon(
+                    item.icon,
+                    size: 18,
+                    color: item.isDestructive
+                        ? Colors.red
+                        : AppColors.primaryOrange,
+                  ),
+                  const SizedBox(width: 12),
+                ]),
+              Expanded(
+                child: Text(
+                  item.label,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: item.isDestructive
+                        ? Colors.red
+                        : AppColors.textPrimary,
+                  ),
+                ),
+              ),
+              if (item.shortcut != null)
+                Text(
+                  item.shortcut!,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+}
+
+class ContextMenuItem {
+  final String label;
+  final IconData? icon;
+  final String? shortcut;
+  final VoidCallback onTap;
+  final bool isDestructive;
+
+  ContextMenuItem({
+    required this.label,
+    this.icon,
+    this.shortcut,
+    required this.onTap,
+    this.isDestructive = false,
+  });
 }

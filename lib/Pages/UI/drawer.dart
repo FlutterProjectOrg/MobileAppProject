@@ -1,110 +1,203 @@
 import 'package:flutter/material.dart';
-
-enum DrawerDirection { left, right, top, bottom }
+import 'package:mobile_app_project/Pages/UI/AppColors.dart';
 
 class CustomDrawer extends StatelessWidget {
-  final Widget child;
-  final DrawerDirection direction;
-  final double width;
-  final double height;
+  final String? title;
+  final Widget? header;
+  final List<DrawerItem> items;
+  final Widget? footer;
 
   const CustomDrawer({
     Key? key,
-    required this.child,
-    this.direction = DrawerDirection.right,
-    this.width = 300,
-    this.height = 400,
+    this.title,
+    this.header,
+    required this.items,
+    this.footer,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Align(
-      alignment: _getAlignment(),
-      child: Material(
-        color: Colors.transparent,
-        child: Container(
-          width:
-              direction == DrawerDirection.left ||
-                  direction == DrawerDirection.right
-              ? width
-              : double.infinity,
-          height:
-              direction == DrawerDirection.top ||
-                  direction == DrawerDirection.bottom
-              ? height
-              : double.infinity,
-          decoration: BoxDecoration(
-            color: Theme.of(context).dialogBackgroundColor,
-            borderRadius: _getBorderRadius(),
-            boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10)],
+    return Drawer(
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.white, AppColors.background],
           ),
-          child: child,
+        ),
+        child: Column(
+          children: [
+            if (header != null)
+              header!
+            else if (title != null)
+              Container(
+                padding: EdgeInsets.fromLTRB(
+                  24,
+                  MediaQuery.of(context).padding.top + 24,
+                  24,
+                  24,
+                ),
+                decoration: BoxDecoration(
+                  gradient: AppColors.gradientPrimary,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primaryOrange.withOpacity(0.3),
+                      blurRadius: 15,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.restaurant_menu,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Text(
+                        title!,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                itemCount: items.length,
+                itemBuilder: (context, index) {
+                  final item = items[index];
+                  if (item.isDivider) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      child: Divider(
+                        color: AppColors.primaryOrange.withOpacity(0.2),
+                      ),
+                    );
+                  }
+                  return _buildDrawerItem(context, item);
+                },
+              ),
+            ),
+            if (footer != null) footer!,
+          ],
         ),
       ),
     );
   }
 
-  Alignment _getAlignment() {
-    switch (direction) {
-      case DrawerDirection.left:
-        return Alignment.centerLeft;
-      case DrawerDirection.right:
-        return Alignment.centerRight;
-      case DrawerDirection.top:
-        return Alignment.topCenter;
-      case DrawerDirection.bottom:
-        return Alignment.bottomCenter;
-    }
-  }
-
-  BorderRadius _getBorderRadius() {
-    switch (direction) {
-      case DrawerDirection.left:
-        return const BorderRadius.horizontal(right: Radius.circular(12));
-      case DrawerDirection.right:
-        return const BorderRadius.horizontal(left: Radius.circular(12));
-      case DrawerDirection.top:
-        return const BorderRadius.vertical(bottom: Radius.circular(12));
-      case DrawerDirection.bottom:
-        return const BorderRadius.vertical(top: Radius.circular(12));
-    }
+  Widget _buildDrawerItem(BuildContext context, DrawerItem item) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+      decoration: BoxDecoration(
+        gradient: item.isSelected ? AppColors.gradientPrimary.scale(0.2) : null,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: ListTile(
+        leading: item.icon != null
+            ? Icon(
+                item.icon,
+                color: item.isSelected
+                    ? AppColors.primaryOrange
+                    : AppColors.textSecondary,
+                size: 22,
+              )
+            : null,
+        title: Text(
+          item.title,
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: item.isSelected ? FontWeight.w600 : FontWeight.w500,
+            color: item.isSelected
+                ? AppColors.primaryOrange
+                : AppColors.textPrimary,
+          ),
+        ),
+        subtitle: item.subtitle != null
+            ? Text(
+                item.subtitle!,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                ),
+              )
+            : null,
+        trailing: item.badge != null
+            ? Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  gradient: AppColors.gradientPrimary,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  item.badge!,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              )
+            : (item.trailing ??
+                  (item.onTap != null
+                      ? Icon(
+                          Icons.chevron_right,
+                          color: AppColors.textSecondary.withOpacity(0.5),
+                          size: 20,
+                        )
+                      : null)),
+        onTap: item.onTap != null
+            ? () {
+                item.onTap!();
+                Navigator.pop(context);
+              }
+            : null,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
   }
 }
 
-// Exemple d'utilisation
-void showCustomDrawer(BuildContext context, DrawerDirection direction) {
-  showGeneralDialog(
-    context: context,
-    barrierDismissible: true,
-    barrierLabel: 'Drawer',
-    barrierColor: Colors.black54,
-    pageBuilder: (context, _, __) {
-      return CustomDrawer(
-        direction: direction,
-        width: 300,
-        height: 400,
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                "Drawer Header",
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-            ),
-            const Divider(),
-            Expanded(child: Center(child: Text("Drawer Content"))),
-            const Divider(),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text("Close"),
-              ),
-            ),
-          ],
-        ),
-      );
-    },
-  );
+class DrawerItem {
+  final String title;
+  final String? subtitle;
+  final IconData? icon;
+  final String? badge;
+  final Widget? trailing;
+  final VoidCallback? onTap;
+  final bool isSelected;
+  final bool isDivider;
+
+  DrawerItem({
+    required this.title,
+    this.subtitle,
+    this.icon,
+    this.badge,
+    this.trailing,
+    this.onTap,
+    this.isSelected = false,
+    this.isDivider = false,
+  });
+
+  static DrawerItem divider() {
+    return DrawerItem(title: '', isDivider: true);
+  }
 }

@@ -1,48 +1,26 @@
 import 'package:flutter/material.dart';
-import 'dart:async';
+import 'package:flutter/services.dart';
+import 'package:mobile_app_project/Pages/UI/AppColors.dart';
 
-class InputOTP extends StatelessWidget {
+class InputOTP extends StatefulWidget {
   final int length;
-  final Function(String) onChanged;
-  final bool enabled;
+  final ValueChanged<String> onCompleted;
+  final ValueChanged<String>? onChanged;
 
   const InputOTP({
     Key? key,
     this.length = 6,
-    required this.onChanged,
-    this.enabled = true,
+    required this.onCompleted,
+    this.onChanged,
   }) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    return InputOTPGroup(
-      length: length,
-      onChanged: onChanged,
-      enabled: enabled,
-    );
-  }
+  State<InputOTP> createState() => _InputOTPState();
 }
 
-class InputOTPGroup extends StatefulWidget {
-  final int length;
-  final Function(String) onChanged;
-  final bool enabled;
-
-  const InputOTPGroup({
-    Key? key,
-    required this.length,
-    required this.onChanged,
-    this.enabled = true,
-  }) : super(key: key);
-
-  @override
-  _InputOTPGroupState createState() => _InputOTPGroupState();
-}
-
-class _InputOTPGroupState extends State<InputOTPGroup> {
+class _InputOTPState extends State<InputOTP> {
   late List<TextEditingController> _controllers;
   late List<FocusNode> _focusNodes;
-  String otpValue = "";
 
   @override
   void initState() {
@@ -56,147 +34,86 @@ class _InputOTPGroupState extends State<InputOTPGroup> {
 
   @override
   void dispose() {
-    for (var c in _controllers) {
-      c.dispose();
+    for (var controller in _controllers) {
+      controller.dispose();
     }
-    for (var f in _focusNodes) {
-      f.dispose();
+    for (var node in _focusNodes) {
+      node.dispose();
     }
     super.dispose();
+  }
+
+  String _getOTP() {
+    return _controllers.map((c) => c.text).join();
   }
 
   void _onChanged(int index, String value) {
     if (value.isNotEmpty && index < widget.length - 1) {
       _focusNodes[index + 1].requestFocus();
     }
-    if (value.isEmpty && index > 0) {
-      _focusNodes[index - 1].requestFocus();
-    }
 
-    otpValue = _controllers.map((c) => c.text).join();
-    widget.onChanged(otpValue);
-    setState(() {});
+    final otp = _getOTP();
+    widget.onChanged?.call(otp);
+
+    if (otp.length == widget.length) {
+      widget.onCompleted(otp);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    List<Widget> slots = [];
-    for (int i = 0; i < widget.length; i++) {
-      slots.add(
-        InputOTPSlot(
-          controller: _controllers[i],
-          focusNode: _focusNodes[i],
-          onChanged: (value) => _onChanged(i, value),
-        ),
-      );
-
-      if (i < widget.length - 1) {
-        slots.add(InputOTPSeparator());
-      }
-    }
-
-    return Row(mainAxisAlignment: MainAxisAlignment.center, children: slots);
-  }
-}
-
-class InputOTPSlot extends StatefulWidget {
-  final TextEditingController controller;
-  final FocusNode focusNode;
-  final Function(String) onChanged;
-
-  const InputOTPSlot({
-    Key? key,
-    required this.controller,
-    required this.focusNode,
-    required this.onChanged,
-  }) : super(key: key);
-
-  @override
-  _InputOTPSlotState createState() => _InputOTPSlotState();
-}
-
-class _InputOTPSlotState extends State<InputOTPSlot>
-    with SingleTickerProviderStateMixin {
-  bool isActive = false;
-  late Timer _caretTimer;
-  bool showCaret = true;
-
-  @override
-  void initState() {
-    super.initState();
-    widget.focusNode.addListener(() {
-      setState(() {
-        isActive = widget.focusNode.hasFocus;
-      });
-    });
-
-    _caretTimer = Timer.periodic(Duration(milliseconds: 500), (timer) {
-      if (isActive) {
-        setState(() {
-          showCaret = !showCaret;
-        });
-      } else if (!showCaret) {
-        setState(() {
-          showCaret = true;
-        });
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _caretTimer.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 45,
-      height: 45,
-      margin: EdgeInsets.symmetric(horizontal: 2),
-      decoration: BoxDecoration(
-        color: Colors.grey[200],
-        border: Border.all(
-          color: isActive ? Colors.blue : Colors.grey,
-          width: isActive ? 2 : 1,
-        ),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      alignment: Alignment.center,
-      child: Stack(
-        children: [
-          TextField(
-            controller: widget.controller,
-            focusNode: widget.focusNode,
-            maxLength: 1,
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 20),
-            decoration: InputDecoration(
-              border: InputBorder.none,
-              counterText: "",
-            ),
-            onChanged: widget.onChanged,
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(widget.length, (index) {
+        return Container(
+          width: 50,
+          height: 60,
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          child: TextField(
+            controller: _controllers[index],
+            focusNode: _focusNodes[index],
             keyboardType: TextInputType.number,
-          ),
-          if (isActive && showCaret && widget.controller.text.isEmpty)
-            Positioned(
-              left: 22,
-              top: 12,
-              child: Container(width: 2, height: 20, color: Colors.black),
+            textAlign: TextAlign.center,
+            maxLength: 1,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
             ),
-        ],
-      ),
-    );
-  }
-}
-
-class InputOTPSeparator extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 2),
-      child: Icon(Icons.remove, size: 18, color: Colors.grey),
+            decoration: InputDecoration(
+              counterText: '',
+              filled: true,
+              fillColor: AppColors.background,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: AppColors.primaryOrange.withOpacity(0.2),
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: AppColors.primaryOrange.withOpacity(0.2),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: AppColors.primaryOrange,
+                  width: 2,
+                ),
+              ),
+            ),
+            onChanged: (value) => _onChanged(index, value),
+            onTap: () {
+              _controllers[index].selection = TextSelection.fromPosition(
+                TextPosition(offset: _controllers[index].text.length),
+              );
+            },
+          ),
+        );
+      }),
     );
   }
 }

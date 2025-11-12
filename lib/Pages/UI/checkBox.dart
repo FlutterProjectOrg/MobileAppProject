@@ -1,43 +1,77 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_app_project/Pages/UI/AppColors.dart';
 
 class CustomCheckbox extends StatelessWidget {
   final bool value;
-  final ValueChanged<bool?>? onChanged;
-  final bool isDisabled;
+  final ValueChanged<bool?> onChanged;
+  final String? label;
+  final String? description;
 
   const CustomCheckbox({
     Key? key,
     required this.value,
-    this.onChanged,
-    this.isDisabled = false,
+    required this.onChanged,
+    this.label,
+    this.description,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return GestureDetector(
-      onTap: isDisabled
-          ? null
-          : () {
-              if (onChanged != null) onChanged!(!value);
-            },
-      child: Container(
-        width: 24,
-        height: 24,
-        decoration: BoxDecoration(
-          color: value
-              ? theme.colorScheme.primary
-              : theme.inputDecorationTheme.fillColor ?? Colors.grey.shade200,
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(
-            color: value ? theme.colorScheme.primary : Colors.grey.shade400,
-            width: 1.5,
-          ),
+    return InkWell(
+      onTap: () => onChanged(!value),
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+        child: Row(
+          children: [
+            Container(
+              width: 20,
+              height: 20,
+              decoration: BoxDecoration(
+                color: value ? AppColors.primaryOrange : Colors.transparent,
+                border: Border.all(
+                  color: value
+                      ? AppColors.primaryOrange
+                      : AppColors.textSecondary.withOpacity(0.3),
+                  width: 2,
+                ),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: value
+                  ? const Icon(Icons.check, size: 14, color: Colors.white)
+                  : null,
+            ),
+            if (label != null || description != null) ...[
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (label != null)
+                      Text(
+                        label!,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    if (description != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        description!,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ],
         ),
-        child: value
-            ? Icon(Icons.check, size: 18, color: theme.colorScheme.onPrimary)
-            : null,
       ),
     );
   }

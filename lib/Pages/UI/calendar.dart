@@ -1,93 +1,202 @@
 import 'package:flutter/material.dart';
-import 'package:table_calendar/table_calendar.dart';
+import 'package:mobile_app_project/Pages/UI/AppColors.dart';
 
-class Calendar extends StatelessWidget {
-  final CalendarFormat initialFormat;
-  final DateTime focusedDay;
-  final DateTime? selectedDay;
-  final DateTime? rangeStart;
-  final DateTime? rangeEnd;
-  final Function(DateTime)? onDaySelected;
-  final Function(DateTime, DateTime)? onRangeSelected;
-  final bool showOutsideDays;
+class CustomCalendar extends StatefulWidget {
+  final DateTime? selectedDate;
+  final ValueChanged<DateTime> onDateSelected;
+  final DateTime? minDate;
+  final DateTime? maxDate;
 
-  const Calendar({
+  const CustomCalendar({
     Key? key,
-    this.initialFormat = CalendarFormat.month,
-    required this.focusedDay,
-    this.selectedDay,
-    this.rangeStart,
-    this.rangeEnd,
-    this.onDaySelected,
-    this.onRangeSelected,
-    this.showOutsideDays = true,
+    this.selectedDate,
+    required this.onDateSelected,
+    this.minDate,
+    this.maxDate,
   }) : super(key: key);
 
   @override
+  State<CustomCalendar> createState() => _CustomCalendarState();
+}
+
+class _CustomCalendarState extends State<CustomCalendar> {
+  late DateTime _currentMonth;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentMonth = widget.selectedDate ?? DateTime.now();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return TableCalendar(
-      firstDay: DateTime.utc(2000, 1, 1),
-      lastDay: DateTime.utc(2100, 12, 31),
-      focusedDay: focusedDay,
-      selectedDayPredicate: (day) => isSameDay(selectedDay, day),
-      rangeStartDay: rangeStart,
-      rangeEndDay: rangeEnd,
-      onDaySelected: (selected, focused) {
-        if (onDaySelected != null) onDaySelected!(selected);
-      },
-      onRangeSelected: (start, end, focused) {
-        if (onRangeSelected != null && start != null && end != null) {
-          onRangeSelected!(start, end);
-        }
-      },
-      calendarFormat: initialFormat,
-      daysOfWeekVisible: true,
-      headerStyle: HeaderStyle(
-        formatButtonVisible: false,
-        titleCentered: true,
-        leftChevronIcon: Icon(Icons.chevron_left, size: 20, color: Colors.grey),
-        rightChevronIcon: Icon(
-          Icons.chevron_right,
-          size: 20,
-          color: Colors.grey,
-        ),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.primaryOrange.withOpacity(0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryOrange.withOpacity(0.1),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
-      calendarStyle: CalendarStyle(
-        todayDecoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.secondary,
-          shape: BoxShape.circle,
-        ),
-        selectedDecoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.primary,
-          shape: BoxShape.circle,
-        ),
-        rangeStartDecoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.primary,
-          shape: BoxShape.circle,
-        ),
-        rangeEndDecoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.primary,
-          shape: BoxShape.circle,
-        ),
-        rangeHighlightColor: Theme.of(
-          context,
-        ).colorScheme.primary.withOpacity(0.3),
-        outsideDaysVisible: showOutsideDays,
-        defaultTextStyle: TextStyle(fontSize: 12),
-        weekendTextStyle: TextStyle(color: Colors.redAccent),
-        disabledTextStyle: TextStyle(
-          color: Colors.grey,
-          fontWeight: FontWeight.w400,
-        ),
-      ),
-      daysOfWeekStyle: DaysOfWeekStyle(
-        weekdayStyle: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-        weekendStyle: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-          color: Colors.redAccent,
-        ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildHeader(),
+          const SizedBox(height: 16),
+          _buildWeekdays(),
+          const SizedBox(height: 8),
+          _buildDays(),
+        ],
       ),
     );
+  }
+
+  Widget _buildHeader() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        IconButton(
+          icon: const Icon(Icons.chevron_left),
+          color: AppColors.primaryOrange,
+          onPressed: () {
+            setState(() {
+              _currentMonth = DateTime(
+                _currentMonth.year,
+                _currentMonth.month - 1,
+              );
+            });
+          },
+        ),
+        Text(
+          '${_getMonthName(_currentMonth.month)} ${_currentMonth.year}',
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        IconButton(
+          icon: const Icon(Icons.chevron_right),
+          color: AppColors.primaryOrange,
+          onPressed: () {
+            setState(() {
+              _currentMonth = DateTime(
+                _currentMonth.year,
+                _currentMonth.month + 1,
+              );
+            });
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildWeekdays() {
+    const weekdays = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      children: weekdays.map((day) {
+        return SizedBox(
+          width: 40,
+          child: Center(
+            child: Text(
+              day,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildDays() {
+    final firstDay = DateTime(_currentMonth.year, _currentMonth.month, 1);
+    final lastDay = DateTime(_currentMonth.year, _currentMonth.month + 1, 0);
+    final daysInMonth = lastDay.day;
+    final startWeekday = firstDay.weekday;
+
+    return Wrap(
+      spacing: 0,
+      runSpacing: 4,
+      children: List.generate(42, (index) {
+        final dayOffset = index - (startWeekday - 1);
+        if (dayOffset < 0 || dayOffset >= daysInMonth) {
+          return const SizedBox(width: 40, height: 40);
+        }
+
+        final date = DateTime(
+          _currentMonth.year,
+          _currentMonth.month,
+          dayOffset + 1,
+        );
+        final isSelected =
+            widget.selectedDate != null &&
+            date.year == widget.selectedDate!.year &&
+            date.month == widget.selectedDate!.month &&
+            date.day == widget.selectedDate!.day;
+        final isToday =
+            date.year == DateTime.now().year &&
+            date.month == DateTime.now().month &&
+            date.day == DateTime.now().day;
+
+        return GestureDetector(
+          onTap: () => widget.onDateSelected(date),
+          child: Container(
+            width: 40,
+            height: 40,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              gradient: isSelected ? AppColors.gradientPrimary : null,
+              color: isToday && !isSelected
+                  ? AppColors.primaryOrange.withOpacity(0.1)
+                  : null,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              '${dayOffset + 1}',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: isSelected || isToday
+                    ? FontWeight.w600
+                    : FontWeight.normal,
+                color: isSelected
+                    ? Colors.white
+                    : isToday
+                    ? AppColors.primaryOrange
+                    : AppColors.textPrimary,
+              ),
+            ),
+          ),
+        );
+      }),
+    );
+  }
+
+  String _getMonthName(int month) {
+    const months = [
+      'Janvier',
+      'Février',
+      'Mars',
+      'Avril',
+      'Mai',
+      'Juin',
+      'Juillet',
+      'Août',
+      'Septembre',
+      'Octobre',
+      'Novembre',
+      'Décembre',
+    ];
+    return months[month - 1];
   }
 }

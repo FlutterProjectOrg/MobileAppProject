@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_app_project/Pages/UI/AppColors.dart';
 
 class RestaurantFilters {
   List<String> cuisine;
@@ -139,12 +140,19 @@ class _FilterSheetState extends State<FilterSheet> {
                 maxWidth: 500,
                 maxHeight: MediaQuery.of(context).size.height * 0.9,
               ),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.only(
+                borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(24),
                   topRight: Radius.circular(24),
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primaryOrange.withOpacity(0.2),
+                    blurRadius: 20,
+                    offset: const Offset(0, -5),
+                  ),
+                ],
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -163,27 +171,41 @@ class _FilterSheetState extends State<FilterSheet> {
 
   Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: Colors.grey[200]!)),
+        gradient: AppColors.gradientPrimary,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
+        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text(
-            'Filtres',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          const Row(
+            children: [
+              Icon(Icons.tune, color: Colors.white, size: 24),
+              SizedBox(width: 12),
+              Text(
+                'Filtres',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ],
           ),
           GestureDetector(
             onTap: widget.onClose,
             child: Container(
-              width: 32,
-              height: 32,
+              width: 36,
+              height: 36,
               decoration: BoxDecoration(
-                color: Colors.grey[100],
+                color: Colors.white.withOpacity(0.2),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.close, size: 20, color: Colors.black87),
+              child: const Icon(Icons.close, size: 20, color: Colors.white),
             ),
           ),
         ],
@@ -193,7 +215,7 @@ class _FilterSheetState extends State<FilterSheet> {
 
   Widget _buildContent() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -213,9 +235,19 @@ class _FilterSheetState extends State<FilterSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Type de cuisine',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        const Row(
+          children: [
+            Icon(Icons.restaurant, size: 20, color: AppColors.primaryOrange),
+            SizedBox(width: 8),
+            Text(
+              'Type de cuisine',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 12),
         Wrap(
@@ -228,22 +260,32 @@ class _FilterSheetState extends State<FilterSheet> {
               child: Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
-                  vertical: 8,
+                  vertical: 10,
                 ),
                 decoration: BoxDecoration(
-                  color: isSelected ? const Color(0xFF3B82F6) : Colors.white,
+                  gradient: isSelected ? AppColors.gradientPrimary : null,
+                  color: isSelected ? null : Colors.white,
                   border: Border.all(
                     color: isSelected
-                        ? const Color(0xFF3B82F6)
-                        : Colors.grey[300]!,
+                        ? Colors.transparent
+                        : AppColors.primaryOrange.withOpacity(0.3),
                   ),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: AppColors.primaryOrange.withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : null,
                 ),
                 child: Text(
                   cuisine,
                   style: TextStyle(
                     fontSize: 14,
-                    color: isSelected ? Colors.white : Colors.black87,
+                    color: isSelected ? Colors.white : AppColors.textSecondary,
                     fontWeight: isSelected
                         ? FontWeight.w600
                         : FontWeight.normal,
@@ -261,9 +303,19 @@ class _FilterSheetState extends State<FilterSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Gamme de prix',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        const Row(
+          children: [
+            Icon(Icons.euro, size: 20, color: AppColors.primaryOrange),
+            SizedBox(width: 8),
+            Text(
+              'Gamme de prix',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 12),
         Row(
@@ -277,22 +329,32 @@ class _FilterSheetState extends State<FilterSheet> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     decoration: BoxDecoration(
-                      color: isSelected
-                          ? const Color(0xFF3B82F6)
-                          : Colors.white,
+                      gradient: isSelected ? AppColors.gradientPrimary : null,
+                      color: isSelected ? null : Colors.white,
                       border: Border.all(
                         color: isSelected
-                            ? const Color(0xFF3B82F6)
-                            : Colors.grey[300]!,
+                            ? Colors.transparent
+                            : AppColors.primaryOrange.withOpacity(0.3),
                       ),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color: AppColors.primaryOrange.withOpacity(0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ]
+                          : null,
                     ),
                     child: Center(
                       child: Text(
                         price,
                         style: TextStyle(
                           fontSize: 14,
-                          color: isSelected ? Colors.white : Colors.black87,
+                          color: isSelected
+                              ? Colors.white
+                              : AppColors.textSecondary,
                           fontWeight: isSelected
                               ? FontWeight.w600
                               : FontWeight.normal,
@@ -316,32 +378,54 @@ class _FilterSheetState extends State<FilterSheet> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              'Note minimum',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
-            Row(
+            const Row(
               children: [
-                const Icon(Icons.star, size: 16, color: Color(0xFFFACC15)),
-                const SizedBox(width: 4),
+                Icon(Icons.star, size: 20, color: AppColors.primaryYellow),
+                SizedBox(width: 8),
                 Text(
-                  _currentFilters.rating.toStringAsFixed(1),
-                  style: const TextStyle(
-                    fontSize: 14,
+                  'Note minimum',
+                  style: TextStyle(
+                    fontSize: 16,
                     fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
                   ),
                 ),
               ],
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                gradient: AppColors.gradientPrimary.scale(0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.star,
+                    size: 16,
+                    color: AppColors.primaryYellow,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    _currentFilters.rating.toStringAsFixed(1),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
         const SizedBox(height: 12),
         SliderTheme(
           data: SliderTheme.of(context).copyWith(
-            activeTrackColor: const Color(0xFF3B82F6),
-            inactiveTrackColor: Colors.grey[300],
-            thumbColor: const Color(0xFF3B82F6),
-            overlayColor: const Color(0xFF3B82F6).withOpacity(0.2),
+            activeTrackColor: AppColors.primaryOrange,
+            inactiveTrackColor: AppColors.primaryOrange.withOpacity(0.2),
+            thumbColor: AppColors.primaryOrange,
+            overlayColor: AppColors.primaryOrange.withOpacity(0.2),
             trackHeight: 4,
           ),
           child: Slider(
@@ -367,23 +451,48 @@ class _FilterSheetState extends State<FilterSheet> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              'Distance maximale',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            const Row(
+              children: [
+                Icon(
+                  Icons.location_on,
+                  size: 20,
+                  color: AppColors.primaryOrange,
+                ),
+                SizedBox(width: 8),
+                Text(
+                  'Distance maximale',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
             ),
-            Text(
-              '${_currentFilters.distance.toInt()} km',
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                gradient: AppColors.gradientPrimary.scale(0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                '${_currentFilters.distance.toInt()} km',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
             ),
           ],
         ),
         const SizedBox(height: 12),
         SliderTheme(
           data: SliderTheme.of(context).copyWith(
-            activeTrackColor: const Color(0xFF3B82F6),
-            inactiveTrackColor: Colors.grey[300],
-            thumbColor: const Color(0xFF3B82F6),
-            overlayColor: const Color(0xFF3B82F6).withOpacity(0.2),
+            activeTrackColor: AppColors.primaryOrange,
+            inactiveTrackColor: AppColors.primaryOrange.withOpacity(0.2),
+            thumbColor: AppColors.primaryOrange,
+            overlayColor: AppColors.primaryOrange.withOpacity(0.2),
             trackHeight: 4,
           ),
           child: Slider(
@@ -404,9 +513,19 @@ class _FilterSheetState extends State<FilterSheet> {
 
   Widget _buildFooter() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        border: Border(top: BorderSide(color: Colors.grey[200]!)),
+        color: Colors.white,
+        border: Border(
+          top: BorderSide(color: AppColors.primaryOrange.withOpacity(0.1)),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -3),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -415,14 +534,20 @@ class _FilterSheetState extends State<FilterSheet> {
               onPressed: _resetFilters,
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                side: BorderSide(color: Colors.grey[300]!),
+                side: BorderSide(
+                  color: AppColors.primaryOrange.withOpacity(0.3),
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
               child: const Text(
                 'Réinitialiser',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
+                ),
               ),
             ),
           ),
@@ -431,17 +556,38 @@ class _FilterSheetState extends State<FilterSheet> {
             child: ElevatedButton(
               onPressed: _applyFilters,
               style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                backgroundColor: const Color(0xFF3B82F6),
-                foregroundColor: Colors.white,
+                padding: EdgeInsets.zero,
+                backgroundColor: Colors.transparent,
+                shadowColor: Colors.transparent,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Text(
-                'Appliquer',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              child: Ink(
+                decoration: BoxDecoration(
+                  gradient: AppColors.gradientPrimary,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primaryOrange.withOpacity(0.4),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  alignment: Alignment.center,
+                  child: const Text(
+                    'Appliquer',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
               ),
             ),
           ),

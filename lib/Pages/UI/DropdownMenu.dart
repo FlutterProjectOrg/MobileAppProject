@@ -1,92 +1,108 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_app_project/Pages/UI/AppColors.dart';
 
-class DropdownMenuItemData<T> {
-  final String label;
-  final T? value;
-  final bool checked;
-  final bool isRadio;
-
-  DropdownMenuItemData({
-    required this.label,
-    this.value,
-    this.checked = false,
-    this.isRadio = false,
-  });
-}
-
-class CustomDropdownMenu<T> extends StatelessWidget {
-  final List<DropdownMenuItemData<T>> items;
-  final void Function(T?) onSelected;
-  final String? hint;
+class CustomDropdownMenu extends StatelessWidget {
+  final Widget trigger;
+  final List<DropdownMenuItem> items;
+  final DropdownAlignment alignment;
 
   const CustomDropdownMenu({
     Key? key,
+    required this.trigger,
     required this.items,
-    required this.onSelected,
-    this.hint,
+    this.alignment = DropdownAlignment.bottomLeft,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return PopupMenuButton<T>(
-      onSelected: onSelected,
-      itemBuilder: (context) {
-        return items.map((item) {
-          return PopupMenuItem<T>(
-            value: item.value,
-            child: Row(
-              children: [
-                if (item.isRadio)
-                  Radio(
-                    value: item.value,
-                    groupValue: items
-                        .firstWhere((i) => i.checked, orElse: () => item)
-                        .value,
-                    onChanged: (_) => onSelected(item.value),
-                  )
-                else if (item.checked)
-                  const Icon(Icons.check, size: 20),
-                const SizedBox(width: 8),
-                Text(item.label),
-              ],
-            ),
-          );
-        }).toList();
-      },
-      child: hint != null ? Text(hint!) : const Icon(Icons.more_vert),
+    return GestureDetector(onTap: () => _showMenu(context), child: trigger);
+  }
+
+  void _showMenu(BuildContext context) {
+    final RenderBox renderBox = context.findRenderObject() as RenderBox;
+    final offset = renderBox.localToGlobal(Offset.zero);
+    final size = renderBox.size;
+
+    showMenu(
+      context: context,
+      position: RelativeRect.fromLTRB(
+        offset.dx,
+        offset.dy + size.height + 8,
+        offset.dx + size.width,
+        offset.dy,
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 8,
+      color: Colors.white,
+      items: items.map((item) {
+        return PopupMenuItem(
+          onTap: item.onTap,
+          child: Row(
+            children: [
+              if (item.icon != null)
+                ...([
+                  Icon(
+                    item.icon,
+                    size: 18,
+                    color: item.isDestructive
+                        ? Colors.red
+                        : AppColors.primaryOrange,
+                  ),
+                  const SizedBox(width: 12),
+                ]),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.label,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: item.isDestructive
+                            ? Colors.red
+                            : AppColors.textPrimary,
+                      ),
+                    ),
+                    if (item.description != null)
+                      ...([
+                        const SizedBox(height: 2),
+                        Text(
+                          item.description!,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ]),
+                  ],
+                ),
+              ),
+              if (item.trailing != null) item.trailing!,
+            ],
+          ),
+        );
+      }).toList(),
     );
   }
 }
 
-// Exemple d'utilisation
-class MyDropdownExample extends StatefulWidget {
-  const MyDropdownExample({super.key});
+class DropdownMenuItem {
+  final String label;
+  final String? description;
+  final IconData? icon;
+  final Widget? trailing;
+  final VoidCallback onTap;
+  final bool isDestructive;
 
-  @override
-  State<MyDropdownExample> createState() => _MyDropdownExampleState();
+  DropdownMenuItem({
+    required this.label,
+    this.description,
+    this.icon,
+    this.trailing,
+    required this.onTap,
+    this.isDestructive = false,
+  });
 }
 
-class _MyDropdownExampleState extends State<MyDropdownExample> {
-  String selectedItem = '';
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomDropdownMenu<String>(
-      hint: "Open Menu",
-      items: [
-        DropdownMenuItemData(label: "Option 1", value: "1"),
-        DropdownMenuItemData(label: "Option 2", value: "2", checked: true),
-        DropdownMenuItemData(
-          label: "Option 3 (Radio)",
-          value: "3",
-          isRadio: true,
-        ),
-      ],
-      onSelected: (value) {
-        setState(() {
-          selectedItem = value ?? '';
-        });
-      },
-    );
-  }
-}
+enum DropdownAlignment { topLeft, topRight, bottomLeft, bottomRight }

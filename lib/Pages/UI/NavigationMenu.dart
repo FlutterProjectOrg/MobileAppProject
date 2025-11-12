@@ -1,162 +1,197 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_app_project/Pages/UI/AppColors.dart';
 
 class NavigationMenu extends StatelessWidget {
-  final List<Widget> children;
-  const NavigationMenu({Key? key, required this.children}) : super(key: key);
+  final List<NavigationMenuItem> items;
+  final int selectedIndex;
+  final ValueChanged<int> onChanged;
+  final NavigationMenuType type;
 
-  @override
-  Widget build(BuildContext context) {
-    return Row(mainAxisSize: MainAxisSize.min, children: children);
-  }
-}
-
-class NavigationMenuItem extends StatelessWidget {
-  final Widget trigger;
-  final Widget content;
-
-  const NavigationMenuItem({
+  const NavigationMenu({
     Key? key,
-    required this.trigger,
-    required this.content,
+    required this.items,
+    required this.selectedIndex,
+    required this.onChanged,
+    this.type = NavigationMenuType.vertical,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return _NavigationMenuItemWrapper(trigger: trigger, content: content);
-  }
-}
-
-class _NavigationMenuItemWrapper extends StatefulWidget {
-  final Widget trigger;
-  final Widget content;
-
-  const _NavigationMenuItemWrapper({
-    Key? key,
-    required this.trigger,
-    required this.content,
-  }) : super(key: key);
-
-  @override
-  State<_NavigationMenuItemWrapper> createState() =>
-      _NavigationMenuItemWrapperState();
-}
-
-class _NavigationMenuItemWrapperState
-    extends State<_NavigationMenuItemWrapper> {
-  final LayerLink _layerLink = LayerLink();
-  OverlayEntry? _overlayEntry;
-  bool _isOpen = false;
-
-  void _toggleOverlay() {
-    setState(() {
-      if (_isOpen) {
-        _overlayEntry?.remove();
-        _overlayEntry = null;
-        _isOpen = false;
-      } else {
-        _overlayEntry = _createOverlay();
-        Overlay.of(context).insert(_overlayEntry!);
-        _isOpen = true;
-      }
-    });
+    if (type == NavigationMenuType.horizontal) {
+      return _buildHorizontalMenu();
+    }
+    return _buildVerticalMenu();
   }
 
-  OverlayEntry _createOverlay() {
-    return OverlayEntry(
-      builder: (context) => Positioned(
-        width: 200,
-        child: CompositedTransformFollower(
-          link: _layerLink,
-          offset: const Offset(0, 40),
-          showWhenUnlinked: false,
-          child: Material(
-            elevation: 4,
-            borderRadius: BorderRadius.circular(6),
-            color: Theme.of(context).colorScheme.surface,
-            child: widget.content,
-          ),
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return CompositedTransformTarget(
-      link: _layerLink,
-      child: GestureDetector(onTap: _toggleOverlay, child: widget.trigger),
-    );
-  }
-}
-
-class NavigationMenuTrigger extends StatelessWidget {
-  final String label;
-  const NavigationMenuTrigger({Key? key, required this.label})
-    : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildVerticalMenu() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.background,
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Row(
-        children: [
-          Text(label, style: const TextStyle(fontSize: 14)),
-          const SizedBox(width: 4),
-          const Icon(Icons.arrow_drop_down, size: 20),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.primaryOrange.withOpacity(0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryOrange.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
+      child: Column(
+        children: List.generate(items.length, (index) {
+          final item = items[index];
+          final isSelected = index == selectedIndex;
+
+          return Container(
+            margin: const EdgeInsets.only(bottom: 4),
+            decoration: BoxDecoration(
+              gradient: isSelected
+                  ? AppColors.gradientPrimary.scale(0.2)
+                  : null,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: ListTile(
+              leading: Icon(
+                item.icon,
+                color: isSelected
+                    ? AppColors.primaryOrange
+                    : AppColors.textSecondary,
+                size: 22,
+              ),
+              title: Text(
+                item.label,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  color: isSelected
+                      ? AppColors.primaryOrange
+                      : AppColors.textPrimary,
+                ),
+              ),
+              trailing: item.badge != null
+                  ? Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: AppColors.gradientPrimary,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        item.badge!,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    )
+                  : null,
+              onTap: () => onChanged(index),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        }),
+      ),
     );
   }
-}
 
-class NavigationMenuContent extends StatelessWidget {
-  final List<Widget> children;
-  const NavigationMenuContent({Key? key, required this.children})
-    : super(key: key);
+  Widget _buildHorizontalMenu() {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.primaryOrange.withOpacity(0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryOrange.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: List.generate(items.length, (index) {
+          final item = items[index];
+          final isSelected = index == selectedIndex;
 
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: children,
-    );
-  }
-}
-
-class NavigationMenuLink extends StatelessWidget {
-  final String label;
-  final VoidCallback? onTap;
-  const NavigationMenuLink({Key? key, required this.label, this.onTap})
-    : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      hoverColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        child: Text(label, style: const TextStyle(fontSize: 14)),
+          return Expanded(
+            child: GestureDetector(
+              onTap: () => onChanged(index),
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  gradient: isSelected ? AppColors.gradientPrimary : null,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      item.icon,
+                      color: isSelected
+                          ? Colors.white
+                          : AppColors.textSecondary,
+                      size: 22,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      item.label,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: isSelected
+                            ? Colors.white
+                            : AppColors.textPrimary,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    if (item.badge != null) ...[
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? Colors.white.withOpacity(0.3)
+                              : AppColors.primaryOrange,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          item.badge!,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: isSelected ? Colors.white : Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          );
+        }),
       ),
     );
   }
 }
 
-class NavigationMenuIndicator extends StatelessWidget {
-  const NavigationMenuIndicator({Key? key}) : super(key: key);
+class NavigationMenuItem {
+  final String label;
+  final IconData icon;
+  final String? badge;
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 8,
-      height: 8,
-      transform: Matrix4.rotationZ(45 * 3.1415927 / 180),
-      decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary),
-    );
-  }
+  NavigationMenuItem({required this.label, required this.icon, this.badge});
 }
+
+enum NavigationMenuType { vertical, horizontal }

@@ -1,28 +1,52 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_app_project/Pages/UI/AppColors.dart';
 
 class Label extends StatelessWidget {
   final String text;
-  final bool disabled;
-  final TextStyle? style;
+  final bool required;
+  final String? tooltip;
 
-  const Label({Key? key, required this.text, this.disabled = false, this.style})
-    : super(key: key);
+  const Label({
+    Key? key,
+    required this.text,
+    this.required = false,
+    this.tooltip,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Opacity(
-      opacity: disabled ? 0.5 : 1.0,
-      child: Text(
-        text,
-        style:
-            style ??
-            TextStyle(
-              fontSize: 14, // text-sm
-              fontWeight: FontWeight.w500, // font-medium
-              height: 1.2, // leading-none
-              color: disabled ? Colors.grey : Colors.black,
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          text,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        if (required)
+          const Text(
+            ' *',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Colors.red,
             ),
-      ),
+          ),
+        if (tooltip != null) ...[
+          const SizedBox(width: 4),
+          Tooltip(
+            message: tooltip!,
+            child: Icon(
+              Icons.help_outline,
+              size: 16,
+              color: AppColors.textSecondary.withOpacity(0.5),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }

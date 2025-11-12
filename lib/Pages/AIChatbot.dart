@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_app_project/Pages/UI/AppColors.dart';
 
 class Message {
   final int id;
@@ -136,9 +137,9 @@ class _AIChatbotState extends State<AIChatbot>
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
+                      color: AppColors.primaryOrange.withOpacity(0.3),
+                      blurRadius: 30,
+                      offset: const Offset(0, 15),
                     ),
                   ],
                 ),
@@ -160,18 +161,19 @@ class _AIChatbotState extends State<AIChatbot>
   Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Color(0xFF9333EA), // purple-600
-            Color(0xFFA855F7), // purple-500
-            Color(0xFFEC4899), // pink-500
-          ],
-        ),
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        gradient: AppColors.gradientPrimary,
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryOrange.withOpacity(0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -207,7 +209,7 @@ class _AIChatbotState extends State<AIChatbot>
                       width: 8,
                       height: 8,
                       decoration: const BoxDecoration(
-                        color: Color(0xFF4ADE80), // green-400
+                        color: Colors.greenAccent,
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -230,7 +232,7 @@ class _AIChatbotState extends State<AIChatbot>
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
+                color: Colors.white.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(Icons.close, color: Colors.white, size: 20),
@@ -248,7 +250,7 @@ class _AIChatbotState extends State<AIChatbot>
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Colors.grey[50]!, Colors.white],
+            colors: [AppColors.background, Colors.white],
           ),
         ),
         child: ListView.builder(
@@ -285,28 +287,28 @@ class _AIChatbotState extends State<AIChatbot>
                     vertical: 14,
                   ),
                   decoration: BoxDecoration(
-                    gradient: isUser
-                        ? const LinearGradient(
-                            colors: [Color(0xFF3B82F6), Color(0xFF8B5CF6)],
-                          )
-                        : null,
+                    gradient: isUser ? AppColors.gradientPrimary : null,
                     color: isUser ? null : Colors.white,
                     border: isUser
                         ? null
-                        : Border.all(color: Colors.grey[200]!),
+                        : Border.all(
+                            color: AppColors.primaryOrange.withOpacity(0.2),
+                          ),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
+                        color: isUser
+                            ? AppColors.primaryOrange.withOpacity(0.2)
+                            : Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 3),
                       ),
                     ],
                   ),
                   child: Text(
                     message.text,
                     style: TextStyle(
-                      color: isUser ? Colors.white : Colors.black87,
+                      color: isUser ? Colors.white : AppColors.textPrimary,
                       fontSize: 14,
                       height: 1.5,
                     ),
@@ -331,18 +333,25 @@ class _AIChatbotState extends State<AIChatbot>
                       ),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        border: Border.all(color: Colors.grey[300]!),
+                        border: Border.all(
+                          color: AppColors.primaryOrange.withOpacity(0.3),
+                        ),
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 4,
+                            color: AppColors.primaryOrange.withOpacity(0.1),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
                           ),
                         ],
                       ),
                       child: Text(
                         suggestion,
-                        style: TextStyle(color: Colors.grey[700], fontSize: 12),
+                        style: const TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                   );
@@ -359,23 +368,34 @@ class _AIChatbotState extends State<AIChatbot>
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(top: BorderSide(color: Colors.grey[200]!)),
+        border: Border(
+          top: BorderSide(color: AppColors.primaryOrange.withOpacity(0.1)),
+        ),
       ),
       child: Row(
         children: [
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.grey[50],
+                color: AppColors.background,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.grey[200]!),
+                border: Border.all(
+                  color: AppColors.primaryOrange.withOpacity(0.2),
+                ),
               ),
               child: TextField(
                 controller: _textController,
-                decoration: const InputDecoration(
+                style: const TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 14,
+                ),
+                decoration: InputDecoration(
                   hintText: 'Posez-moi une question...',
+                  hintStyle: TextStyle(
+                    color: AppColors.textSecondary.withOpacity(0.6),
+                  ),
                   border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(
+                  contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 12,
                   ),
@@ -391,14 +411,12 @@ class _AIChatbotState extends State<AIChatbot>
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF3B82F6), Color(0xFF8B5CF6)],
-                ),
+                gradient: AppColors.gradientPrimary,
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF3B82F6).withOpacity(0.3),
-                    blurRadius: 8,
+                    color: AppColors.primaryOrange.withOpacity(0.4),
+                    blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
                 ],

@@ -1,87 +1,127 @@
-import 'package:flutter/material.dart' hide CarouselController;
-import 'package:carousel_slider/carousel_slider.dart';
+import 'package:flutter/material.dart';
+import 'package:mobile_app_project/Pages/UI/AppColors.dart';
 
-class CarouselWidget extends StatefulWidget {
-  final List<Widget> children;
-  final Axis axis;
-  final double viewportFraction;
-  final bool enableInfiniteScroll;
+class Carousel extends StatefulWidget {
+  final List<Widget> items;
+  final double height;
+  final bool autoPlay;
+  final Duration autoPlayDuration;
+  final bool showIndicators;
 
-  const CarouselWidget({
+  const Carousel({
     Key? key,
-    required this.children,
-    this.axis = Axis.horizontal,
-    this.viewportFraction = 1.0,
-    this.enableInfiniteScroll = true,
+    required this.items,
+    this.height = 200,
+    this.autoPlay = false,
+    this.autoPlayDuration = const Duration(seconds: 3),
+    this.showIndicators = true,
   }) : super(key: key);
 
   @override
-  State<CarouselWidget> createState() => _CarouselWidgetState();
+  State<Carousel> createState() => _CarouselState();
 }
 
-class _CarouselWidgetState extends State<CarouselWidget> {
-  final CarouselController _controller = CarouselController();
-  int _current = 0;
+class _CarouselState extends State<Carousel> {
+  late PageController _pageController;
+  int _currentPage = 0;
 
-  void _scrollPrev() {
-    if (_current > 0) {
-      _controller.animateToPage(
-        _current - 1,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+
+    if (widget.autoPlay) {
+      _startAutoPlay();
     }
   }
 
-  void _scrollNext() {
-    if (_current < widget.children.length - 1) {
-      _controller.animateToPage(
-        _current + 1,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-    }
+  void _startAutoPlay() {
+    Future.delayed(widget.autoPlayDuration, () {
+      if (mounted) {
+        final nextPage = (_currentPage + 1) % widget.items.length;
+        _pageController.animateToPage(
+          nextPage,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+        _startAutoPlay();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      alignment: Alignment.center,
+    return Column(
       children: [
-        CarouselSlider(
-          items: widget.children,
-          carouselController: _controller,
-          options: CarouselOptions(
-            scrollDirection: widget.axis,
-            viewportFraction: widget.viewportFraction,
-            enableInfiniteScroll: widget.enableInfiniteScroll,
-            onPageChanged: (index, reason) {
+        SizedBox(
+          height: widget.height,
+          child: PageView.builder(
+            controller: _pageController,
+            onPageChanged: (index) {
               setState(() {
-                _current = index;
+                _currentPage = index;
               });
+            },
+            itemCount: widget.items.length,
+            itemBuilder: (context, index) {
+              return Container(
+                margin: const EdgeInsets.symmetric(horizontal: 8),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: AppColors.primaryOrange.withOpacity(0.2),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primaryOrange.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: widget.items[index],
+              );
             },
           ),
         ),
-
-        // Previous button
-        Positioned(
-          left: 8,
-          child: IconButton(
-            icon: const Icon(Icons.arrow_left),
-            onPressed: _current > 0 ? _scrollPrev : null,
+        if (widget.showIndicators) ...[
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(widget.items.length, (index) {
+              final isActive = index == _currentPage;
+              return GestureDetector(
+                onTap: () {
+                  _pageController.animateToPage(
+                    index,
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                  );
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  width: isActive ? 24 : 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    gradient: isActive ? AppColors.gradientPrimary : null,
+                    color: isActive
+                        ? null
+                        : AppColors.textSecondary.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              );
+            }),
           ),
-        ),
-
-        // Next button
-        Positioned(
-          right: 8,
-          child: IconButton(
-            icon: const Icon(Icons.arrow_right),
-            onPressed: _current < widget.children.length - 1
-                ? _scrollNext
-                : null,
-          ),
-        ),
+        ],
       ],
     );
   }

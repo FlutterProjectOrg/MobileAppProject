@@ -1,55 +1,44 @@
 import 'package:flutter/material.dart';
 
-class ResponsiveWidget extends StatefulWidget {
+class ResponsiveWidget extends StatelessWidget {
   final Widget mobile;
-  final Widget desktop;
+  final Widget? tablet;
+  final Widget? desktop;
 
   const ResponsiveWidget({
-    required this.mobile,
-    required this.desktop,
     Key? key,
+    required this.mobile,
+    this.tablet,
+    this.desktop,
   }) : super(key: key);
 
   @override
-  _ResponsiveWidgetState createState() => _ResponsiveWidgetState();
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth >= 1200) {
+          return desktop ?? tablet ?? mobile;
+        } else if (constraints.maxWidth >= 768) {
+          return tablet ?? mobile;
+        } else {
+          return mobile;
+        }
+      },
+    );
+  }
 }
 
-class _ResponsiveWidgetState extends State<ResponsiveWidget>
-    with WidgetsBindingObserver {
-  static const int mobileBreakpoint = 768;
-  bool isMobile = false;
+class ResponsiveBreakpoints {
+  static const double mobile = 768;
+  static const double tablet = 1200;
 
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-    _updateIsMobile();
-  }
+  static bool isMobile(BuildContext context) =>
+      MediaQuery.of(context).size.width < mobile;
 
-  @override
-  void didChangeMetrics() {
-    super.didChangeMetrics();
-    _updateIsMobile();
-  }
+  static bool isTablet(BuildContext context) =>
+      MediaQuery.of(context).size.width >= mobile &&
+      MediaQuery.of(context).size.width < tablet;
 
-  void _updateIsMobile() {
-    final width = MediaQuery.of(context).size.width;
-    final mobile = width < mobileBreakpoint;
-    if (mobile != isMobile) {
-      setState(() {
-        isMobile = mobile;
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return isMobile ? widget.mobile : widget.desktop;
-  }
+  static bool isDesktop(BuildContext context) =>
+      MediaQuery.of(context).size.width >= tablet;
 }

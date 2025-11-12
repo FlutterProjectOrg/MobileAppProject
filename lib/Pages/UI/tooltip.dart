@@ -1,42 +1,44 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_app_project/Pages/UI/AppColors.dart';
 
 class CustomTooltip extends StatelessWidget {
-  final Widget child;
   final String message;
-  final Duration showDuration;
-  final EdgeInsets padding;
-  final double verticalOffset;
-  final TextStyle? textStyle;
-  final Color? backgroundColor;
-  final BorderRadius? borderRadius;
+  final Widget child;
+  final TooltipPosition position;
 
   const CustomTooltip({
     Key? key,
-    required this.child,
     required this.message,
-    this.showDuration = const Duration(seconds: 2),
-    this.padding = const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-    this.verticalOffset = 0,
-    this.textStyle,
-    this.backgroundColor,
-    this.borderRadius,
+    required this.child,
+    this.position = TooltipPosition.top,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Tooltip(
       message: message,
-      waitDuration: const Duration(milliseconds: 0),
-      showDuration: showDuration,
-      verticalOffset: verticalOffset,
-      padding: padding,
-      textStyle:
-          textStyle ?? const TextStyle(color: Colors.white, fontSize: 12),
+      preferBelow: position == TooltipPosition.bottom,
       decoration: BoxDecoration(
-        color: backgroundColor ?? Colors.blue,
-        borderRadius: borderRadius ?? BorderRadius.circular(6),
+        gradient: AppColors.gradientPrimary,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryOrange.withOpacity(0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
+      textStyle: const TextStyle(
+        fontSize: 13,
+        color: Colors.white,
+        fontWeight: FontWeight.w500,
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      margin: const EdgeInsets.all(8),
       child: child,
     );
   }
 }
+
+enum TooltipPosition { top, bottom, left, right }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_app_project/Pages/mock_data.dart';
+import 'package:mobile_app_project/Pages/UI/AppColors.dart';
 
 class ReservationsScreen extends StatefulWidget {
   const ReservationsScreen({Key? key}) : super(key: key);
@@ -52,15 +53,18 @@ class _ReservationsScreenState extends State<ReservationsScreen>
       }
     });
 
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Réservation annulée')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Réservation annulée'),
+        backgroundColor: AppColors.primaryOrange,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFFF5F5F5),
+      color: AppColors.background,
       child: Column(
         children: [
           _buildHeader(),
@@ -82,24 +86,43 @@ class _ReservationsScreenState extends State<ReservationsScreen>
 
   Widget _buildHeader() {
     return Container(
-      color: const Color(0xFF3B82F6),
-      padding: const EdgeInsets.fromLTRB(16, 48, 16, 24),
+      decoration: BoxDecoration(
+        gradient: AppColors.gradientPrimary,
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(32),
+          bottomRight: Radius.circular(32),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryOrange.withOpacity(0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.fromLTRB(24, 48, 24, 32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Mes réservations',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-            ),
+          const Row(
+            children: [
+              Icon(Icons.calendar_today, color: Colors.white, size: 28),
+              SizedBox(width: 12),
+              Text(
+                'Mes réservations',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 8),
           Text(
             'Gérez vos réservations de restaurants',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.8),
+              color: Colors.white.withOpacity(0.9),
               fontSize: 14,
             ),
           ),
@@ -114,23 +137,26 @@ class _ReservationsScreenState extends State<ReservationsScreen>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.primaryOrange.withOpacity(0.1)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: AppColors.primaryOrange.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: TabBar(
         controller: _tabController,
         indicator: BoxDecoration(
-          color: const Color(0xFF3B82F6),
+          gradient: AppColors.gradientPrimary,
           borderRadius: BorderRadius.circular(12),
         ),
         labelColor: Colors.white,
-        unselectedLabelColor: Colors.grey[600],
+        unselectedLabelColor: AppColors.textSecondary,
         labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+        indicatorSize: TabBarIndicatorSize.tab,
+        dividerColor: Colors.transparent,
         tabs: [
           Tab(text: 'À venir (${_upcoming.length})'),
           Tab(text: 'Passées (${_past.length})'),
@@ -211,38 +237,64 @@ class _ReservationsScreenState extends State<ReservationsScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFDCEEFE), // blue-50
-        border: Border.all(color: const Color(0xFF93C5FD)), // blue-200
+        gradient: LinearGradient(
+          colors: [
+            AppColors.primaryOrange.withOpacity(0.1),
+            AppColors.primaryYellow.withOpacity(0.1),
+          ],
+        ),
+        border: Border.all(color: AppColors.primaryOrange.withOpacity(0.3)),
         borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryOrange.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
           Container(
             width: 40,
             height: 40,
-            decoration: const BoxDecoration(
-              color: Color(0xFF3B82F6), // blue-500
+            decoration: BoxDecoration(
+              gradient: AppColors.gradientPrimary,
               shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primaryOrange.withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: const Icon(
-              Icons.calendar_today,
+              Icons.notifications_active,
               color: Colors.white,
               size: 20,
             ),
           ),
           const SizedBox(width: 12),
-          Expanded(
+          const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Rappel automatique',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: 4),
                 Text(
                   'Vous recevrez une notification 2h avant votre réservation',
-                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ],
             ),
@@ -257,11 +309,12 @@ class _ReservationsScreenState extends State<ReservationsScreen>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.primaryOrange.withOpacity(0.1)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: AppColors.primaryOrange.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -280,10 +333,13 @@ class _ReservationsScreenState extends State<ReservationsScreen>
                 return Container(
                   width: 96,
                   height: 96,
-                  color: Colors.grey[300],
-                  child: Icon(
+                  decoration: BoxDecoration(
+                    gradient: AppColors.gradientPrimary.scale(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
                     Icons.restaurant,
-                    color: Colors.grey[600],
+                    color: AppColors.primaryOrange,
                     size: 40,
                   ),
                 );
@@ -308,14 +364,15 @@ class _ReservationsScreenState extends State<ReservationsScreen>
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
+                              color: AppColors.textPrimary,
                             ),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             reservation.cuisine,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 13,
-                              color: Colors.grey[600],
+                              color: AppColors.textSecondary,
                             ),
                           ),
                         ],
@@ -328,22 +385,22 @@ class _ReservationsScreenState extends State<ReservationsScreen>
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFDCFCE7), // green-100
+                          color: Colors.green[100],
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: Row(
+                        child: const Row(
                           mainAxisSize: MainAxisSize.min,
-                          children: const [
+                          children: [
                             Icon(
                               Icons.check_circle,
-                              color: Color(0xFF16A34A), // green-600
+                              color: Colors.green,
                               size: 12,
                             ),
                             SizedBox(width: 4),
                             Text(
                               'Confirmé',
                               style: TextStyle(
-                                color: Color(0xFF16A34A),
+                                color: Colors.green,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -384,14 +441,15 @@ class _ReservationsScreenState extends State<ReservationsScreen>
                     children: [
                       Expanded(
                         child: OutlinedButton.icon(
-                          onPressed: () {
-                            // Appeler le restaurant
-                          },
+                          onPressed: () {},
                           icon: const Icon(Icons.phone, size: 16),
                           label: const Text('Appeler'),
                           style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.primaryOrange,
                             padding: const EdgeInsets.symmetric(vertical: 8),
-                            side: BorderSide(color: Colors.grey[300]!),
+                            side: BorderSide(
+                              color: AppColors.primaryOrange.withOpacity(0.3),
+                            ),
                           ),
                         ),
                       ),
@@ -404,7 +462,9 @@ class _ReservationsScreenState extends State<ReservationsScreen>
                           style: OutlinedButton.styleFrom(
                             foregroundColor: Colors.red,
                             padding: const EdgeInsets.symmetric(vertical: 8),
-                            side: BorderSide(color: Colors.grey[300]!),
+                            side: BorderSide(
+                              color: Colors.red.withOpacity(0.3),
+                            ),
                           ),
                         ),
                       ),
@@ -422,9 +482,12 @@ class _ReservationsScreenState extends State<ReservationsScreen>
   Widget _buildInfoRow(IconData icon, String text) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: Colors.grey[600]),
+        Icon(icon, size: 16, color: AppColors.primaryOrange),
         const SizedBox(width: 8),
-        Text(text, style: TextStyle(fontSize: 13, color: Colors.grey[600])),
+        Text(
+          text,
+          style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+        ),
       ],
     );
   }
@@ -439,32 +502,36 @@ class _ReservationsScreenState extends State<ReservationsScreen>
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
         color: Colors.white,
+        border: Border.all(color: AppColors.primaryOrange.withOpacity(0.1)),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: AppColors.primaryOrange.withOpacity(0.05),
             blurRadius: 10,
-            offset: const Offset(0, 2),
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: Column(
         children: [
-          Icon(icon, size: 48, color: Colors.grey[400]),
+          Icon(icon, size: 48, color: AppColors.primaryOrange.withOpacity(0.5)),
           const SizedBox(height: 16),
           Text(
             title,
             style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF1F2937),
+              color: AppColors.textPrimary,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             message,
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+            style: const TextStyle(
+              fontSize: 14,
+              color: AppColors.textSecondary,
+            ),
           ),
         ],
       ),

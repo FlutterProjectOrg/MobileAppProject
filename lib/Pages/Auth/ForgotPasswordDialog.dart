@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:mobile_app_project/Pages/UI/AppColors.dart';
 import 'package:mobile_app_project/services/Auth/LocalAuthService.dart';
 
 enum ForgotPasswordStep { email, verification, newPassword, success }
@@ -16,7 +17,6 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
-  //final _authService = AuthService();
   final _authService = LocalAuthService.instance;
   ForgotPasswordStep _currentStep = ForgotPasswordStep.email;
   final _emailController = TextEditingController();
@@ -245,7 +245,7 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog>
             ),
           ],
         ),
-        backgroundColor: const Color(0xFF10B981),
+        backgroundColor: AppColors.primaryOrange,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         margin: const EdgeInsets.all(16),
@@ -271,7 +271,7 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog>
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.15),
+                  color: AppColors.primaryOrange.withOpacity(0.2),
                   blurRadius: 40,
                   offset: const Offset(0, 20),
                 ),
@@ -317,9 +317,12 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog>
                   horizontal: index < steps - 1 ? 4 : 0,
                 ),
                 decoration: BoxDecoration(
+                  gradient: index <= currentIndex
+                      ? AppColors.gradientPrimary
+                      : null,
                   color: index <= currentIndex
-                      ? const Color(0xFF3B82F6)
-                      : Colors.grey[300],
+                      ? null
+                      : AppColors.textSecondary.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -329,9 +332,9 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog>
         const SizedBox(height: 16),
         Text(
           '${currentIndex + 1}/$steps',
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 12,
-            color: Colors.grey[600],
+            color: AppColors.textSecondary,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -347,12 +350,12 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog>
           width: 56,
           height: 56,
           decoration: BoxDecoration(
-            color: const Color(0xFF3B82F6).withOpacity(0.1),
+            gradient: AppColors.gradientPrimary.scale(0.2),
             borderRadius: BorderRadius.circular(14),
           ),
           child: const Icon(
             Icons.mail_outline,
-            color: Color(0xFF3B82F6),
+            color: AppColors.primaryOrange,
             size: 28,
           ),
         ),
@@ -362,13 +365,13 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog>
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF1F2937),
+            color: AppColors.textPrimary,
           ),
         ),
         const SizedBox(height: 8),
-        Text(
+        const Text(
           'Entrez votre email et nous vous enverrons un code de vérification',
-          style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+          style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
         ),
         const SizedBox(height: 24),
         _buildLabel('Adresse email'),
@@ -399,12 +402,12 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog>
           width: 56,
           height: 56,
           decoration: BoxDecoration(
-            color: const Color(0xFF10B981).withOpacity(0.1),
+            gradient: AppColors.gradientPrimary.scale(0.2),
             borderRadius: BorderRadius.circular(14),
           ),
           child: const Icon(
             Icons.verified_user_outlined,
-            color: Color(0xFF10B981),
+            color: AppColors.primaryOrange,
             size: 28,
           ),
         ),
@@ -414,13 +417,13 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog>
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF1F2937),
+            color: AppColors.textPrimary,
           ),
         ),
         const SizedBox(height: 8),
         Text(
           'Nous avons envoyé un code de vérification à $_userEmail',
-          style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+          style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
         ),
         const SizedBox(height: 24),
         _buildLabel('Code de vérification (4 chiffres)'),
@@ -437,7 +440,10 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog>
           Center(
             child: Text(
               'Renvoyer le code dans ${_resendCountdown}s',
-              style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+              ),
             ),
           )
         else
@@ -448,7 +454,7 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog>
                 'Renvoyer le code',
                 style: TextStyle(
                   fontSize: 13,
-                  color: Color(0xFF3B82F6),
+                  color: AppColors.primaryOrange,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -485,19 +491,23 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog>
               counterText: '',
               hintText: '0',
               filled: true,
-              fillColor: Colors.grey[50],
+              fillColor: AppColors.background,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey[300]!),
+                borderSide: BorderSide(
+                  color: AppColors.primaryOrange.withOpacity(0.2),
+                ),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey[300]!),
+                borderSide: BorderSide(
+                  color: AppColors.primaryOrange.withOpacity(0.2),
+                ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: const BorderSide(
-                  color: Color(0xFF3B82F6),
+                  color: AppColors.primaryOrange,
                   width: 2,
                 ),
               ),
@@ -506,7 +516,7 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog>
             style: const TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF1F2937),
+              color: AppColors.textPrimary,
             ),
           ),
         );
@@ -522,12 +532,12 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog>
           width: 56,
           height: 56,
           decoration: BoxDecoration(
-            color: const Color(0xFF8B5CF6).withOpacity(0.1),
+            gradient: AppColors.gradientPrimary.scale(0.2),
             borderRadius: BorderRadius.circular(14),
           ),
           child: const Icon(
             Icons.lock_outline,
-            color: Color(0xFF8B5CF6),
+            color: AppColors.primaryOrange,
             size: 28,
           ),
         ),
@@ -537,13 +547,13 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog>
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF1F2937),
+            color: AppColors.textPrimary,
           ),
         ),
         const SizedBox(height: 8),
-        Text(
+        const Text(
           'Créez un mot de passe fort et sécurisé',
-          style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+          style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
         ),
         const SizedBox(height: 24),
         _buildLabel('Nouveau mot de passe'),
@@ -582,6 +592,20 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog>
     final password = _newPasswordController.text;
     final strength = _calculatePasswordStrength(password);
 
+    Color strengthColor;
+    String strengthText;
+
+    if (strength == 1) {
+      strengthColor = Colors.red;
+      strengthText = 'Faible';
+    } else if (strength == 2) {
+      strengthColor = AppColors.primaryYellow;
+      strengthText = 'Moyen';
+    } else {
+      strengthColor = AppColors.primaryOrange;
+      strengthText = 'Fort';
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -591,18 +615,15 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog>
               child: Container(
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey[300],
+                  color: AppColors.textSecondary.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(2),
                 ),
                 child: FractionallySizedBox(
                   widthFactor: strength / 3,
+                  alignment: Alignment.centerLeft,
                   child: Container(
                     decoration: BoxDecoration(
-                      color: strength == 1
-                          ? Colors.red
-                          : strength == 2
-                          ? Colors.orange
-                          : Colors.green,
+                      color: strengthColor,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -611,19 +632,11 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog>
             ),
             const SizedBox(width: 12),
             Text(
-              strength == 1
-                  ? 'Faible'
-                  : strength == 2
-                  ? 'Moyen'
-                  : 'Fort',
+              strengthText,
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: strength == 1
-                    ? Colors.red
-                    : strength == 2
-                    ? Colors.orange
-                    : Colors.green,
+                color: strengthColor,
               ),
             ),
           ],
@@ -652,12 +665,12 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog>
           width: 80,
           height: 80,
           decoration: BoxDecoration(
-            color: const Color(0xFF10B981).withOpacity(0.1),
+            gradient: AppColors.gradientPrimary.scale(0.2),
             borderRadius: BorderRadius.circular(20),
           ),
           child: const Icon(
             Icons.check_circle_outline,
-            color: Color(0xFF10B981),
+            color: AppColors.primaryOrange,
             size: 44,
           ),
         ),
@@ -667,14 +680,14 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog>
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF1F2937),
+            color: AppColors.textPrimary,
           ),
         ),
         const SizedBox(height: 8),
-        Text(
+        const Text(
           'Votre mot de passe a été réinitialisé avec succès.\nVous pouvez maintenant vous connecter.',
           textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+          style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
         ),
         const SizedBox(height: 32),
         _buildActionButton(
@@ -692,7 +705,7 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog>
       style: const TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.w500,
-        color: Color(0xFF1F2937),
+        color: AppColors.textPrimary,
       ),
     );
   }
@@ -708,20 +721,28 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog>
       keyboardType: keyboardType,
       decoration: InputDecoration(
         hintText: hint,
-        prefixIcon: Icon(icon, color: Colors.grey[600], size: 20),
+        hintStyle: TextStyle(color: AppColors.textSecondary.withOpacity(0.5)),
+        prefixIcon: Icon(icon, color: AppColors.primaryOrange, size: 20),
         filled: true,
-        fillColor: Colors.grey[50],
+        fillColor: AppColors.background,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
+          borderSide: BorderSide(
+            color: AppColors.primaryOrange.withOpacity(0.2),
+          ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
+          borderSide: BorderSide(
+            color: AppColors.primaryOrange.withOpacity(0.2),
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 2),
+          borderSide: const BorderSide(
+            color: AppColors.primaryOrange,
+            width: 2,
+          ),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
@@ -742,28 +763,40 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog>
       obscureText: !showPassword,
       decoration: InputDecoration(
         hintText: hint,
-        prefixIcon: Icon(Icons.lock, color: Colors.grey[600], size: 20),
+        hintStyle: TextStyle(color: AppColors.textSecondary.withOpacity(0.5)),
+        prefixIcon: const Icon(
+          Icons.lock,
+          color: AppColors.primaryOrange,
+          size: 20,
+        ),
         suffixIcon: IconButton(
           icon: Icon(
             showPassword ? Icons.visibility : Icons.visibility_off,
-            color: Colors.grey[600],
+            color: AppColors.textSecondary,
             size: 20,
           ),
           onPressed: onToggle,
         ),
         filled: true,
-        fillColor: Colors.grey[50],
+        fillColor: AppColors.background,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
+          borderSide: BorderSide(
+            color: AppColors.primaryOrange.withOpacity(0.2),
+          ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
+          borderSide: BorderSide(
+            color: AppColors.primaryOrange.withOpacity(0.2),
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 2),
+          borderSide: const BorderSide(
+            color: AppColors.primaryOrange,
+            width: 2,
+          ),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
@@ -784,22 +817,48 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog>
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF3B82F6),
+          backgroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
           elevation: 0,
+          padding: EdgeInsets.zero,
         ),
-        child: isLoading
-            ? const CircularProgressIndicator(strokeWidth: 2)
-            : Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: AppColors.gradientPrimary,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primaryOrange.withOpacity(0.4),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
               ),
+            ],
+          ),
+          child: Container(
+            alignment: Alignment.center,
+            child: isLoading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+          ),
+        ),
       ),
     );
   }
@@ -811,17 +870,17 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog>
       child: OutlinedButton(
         onPressed: () => Navigator.pop(context),
         style: OutlinedButton.styleFrom(
-          side: BorderSide(color: Colors.grey[300]!),
+          side: BorderSide(color: AppColors.primaryOrange.withOpacity(0.3)),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
         ),
-        child: Text(
+        child: const Text(
           'Annuler',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: Colors.grey[700],
+            color: AppColors.textSecondary,
           ),
         ),
       ),

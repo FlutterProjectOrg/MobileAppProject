@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:mobile_app_project/Pages/UI/AppColors.dart';
 import 'package:mobile_app_project/services/Auth/LocalAuthService.dart';
 import 'package:mobile_app_project/services/Auth/biometric_service.dart';
 import 'package:mobile_app_project/services/Auth/storage_service.dart';
@@ -22,7 +23,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _darkModeEnabled = false;
   bool _dietaryRestrictions = false;
   double _budgetValue = 25;
-  // final _authService = AuthService();
   final _authService = LocalAuthService.instance;
   UserProfile? _userProfile;
   DeliveryProfile? _deliveryProfile;
@@ -30,6 +30,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isLoading = false;
   final BiometricService _biometricService = BiometricService();
   bool _biometricEnabled = false;
+
   // Controllers for text fields
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
@@ -45,6 +46,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
   int? _userId;
   String? _role;
   int? _biometricUserId;
+
+  final List<String> _allCuisines = [
+    'Tunisian',
+    'Italien',
+    'Japonais',
+    'Français',
+    'Mexicain',
+    'Indien',
+    'Chinois',
+  ];
+  List<String> _cuisinePreferences = [];
+  List<String> _cuisineTypes = [];
+
   @override
   void initState() {
     super.initState();
@@ -89,8 +103,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final prefs = await SharedPreferences.getInstance();
       final userId = prefs.getInt('userId');
       final role = prefs.getString('role');
-      debugPrint('Initializing profile for userId: $userId');
-      debugPrint('Mounted status: $role');
+
       if (!_mounted) return;
 
       if (userId != null) {
@@ -129,7 +142,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final profile = await _authService.getProfile(_userId!);
       if (!_mounted) return;
-      debugPrint('Loaded profile: $profile');
+
       if (profile != null) {
         setState(() {
           _userProfile = profile;
@@ -164,7 +177,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final profile = await _authService.getDeliveryProfile(_userId!);
       if (!_mounted) return;
-      debugPrint('Loaded delivery profile: $profile');
 
       if (profile != null) {
         setState(() {
@@ -193,7 +205,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final profile = await _authService.getOwnerProfile(_userId!);
       if (!_mounted) return;
-      debugPrint('Loaded owner profile: $profile');
 
       if (profile != null) {
         setState(() {
@@ -261,18 +272,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         : _showErrorSnackBar("Failed to update profile");
   }
 
-  final List<String> _allCuisines = [
-    'Tunisian',
-    'Italien',
-    'Japonais',
-    'Français',
-    'Mexicain',
-    'Indien',
-    'Chinois',
-  ];
-  List<String> _cuisinePreferences = [];
-  List<String> _cuisineTypes = [];
-
   @override
   void dispose() {
     _mounted = false;
@@ -317,7 +316,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               title: const Text(
                 'Sélectionnez vos cuisines',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
               ),
               content: SizedBox(
                 width: double.maxFinite,
@@ -330,7 +333,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: TextField(
                         decoration: InputDecoration(
                           hintText: 'Rechercher une cuisine...',
-                          prefixIcon: const Icon(Icons.search),
+                          prefixIcon: const Icon(
+                            Icons.search,
+                            color: AppColors.primaryOrange,
+                          ),
                           suffixIcon: searchQuery.isNotEmpty
                               ? IconButton(
                                   icon: const Icon(Icons.clear),
@@ -343,6 +349,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               : null,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: AppColors.primaryOrange.withOpacity(0.2),
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: AppColors.primaryOrange,
+                              width: 2,
+                            ),
                           ),
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
@@ -362,15 +378,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         padding: const EdgeInsets.all(12),
                         margin: const EdgeInsets.only(bottom: 12),
                         decoration: BoxDecoration(
-                          color: Theme.of(
-                            context,
-                          ).primaryColor.withOpacity(0.1),
+                          gradient: AppColors.gradientPrimary.scale(0.2),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           '${tempSelected.length} cuisine${tempSelected.length > 1 ? 's' : ''} sélectionnée${tempSelected.length > 1 ? 's' : ''}',
-                          style: TextStyle(
-                            color: Theme.of(context).primaryColor,
+                          style: const TextStyle(
+                            color: AppColors.primaryOrange,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -384,14 +398,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               Icon(
                                 Icons.search_off,
                                 size: 64,
-                                color: Colors.grey.shade400,
+                                color: AppColors.textSecondary.withOpacity(0.5),
                               ),
                               const SizedBox(height: 16),
-                              Text(
+                              const Text(
                                 'Aucune cuisine trouvée',
                                 style: TextStyle(
                                   fontSize: 16,
-                                  color: Colors.grey.shade600,
+                                  color: AppColors.textSecondary,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -418,8 +432,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 borderRadius: BorderRadius.circular(12),
                                 side: BorderSide(
                                   color: selected
-                                      ? Theme.of(context).primaryColor
-                                      : Colors.grey.shade300,
+                                      ? AppColors.primaryOrange
+                                      : AppColors.primaryOrange.withOpacity(
+                                          0.2,
+                                        ),
                                   width: selected ? 2 : 1,
                                 ),
                               ),
@@ -432,11 +448,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     fontWeight: selected
                                         ? FontWeight.w600
                                         : FontWeight.w400,
+                                    color: AppColors.textPrimary,
                                   ),
                                 ),
                                 controlAffinity:
                                     ListTileControlAffinity.leading,
-                                activeColor: Theme.of(context).primaryColor,
+                                activeColor: AppColors.primaryOrange,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
@@ -466,9 +483,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       vertical: 12,
                     ),
                   ),
-                  child: Text(
+                  child: const Text(
                     'Annuler',
-                    style: TextStyle(fontSize: 16, color: Colors.grey.shade700),
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ),
                 ElevatedButton(
@@ -483,15 +503,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Navigator.pop(context);
                   },
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
-                    ),
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    padding: EdgeInsets.zero,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: const Text('Valider', style: TextStyle(fontSize: 16)),
+                  child: Ink(
+                    decoration: BoxDecoration(
+                      gradient: AppColors.gradientPrimary,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                      child: const Text(
+                        'Valider',
+                        style: TextStyle(fontSize: 16, color: Colors.white),
+                      ),
+                    ),
+                  ),
                 ),
               ],
               actionsPadding: const EdgeInsets.all(16),
@@ -505,7 +539,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.primaryOrange),
+        ),
+      );
     }
 
     switch (_role) {
@@ -515,7 +553,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return Scaffold(body: _buildRestaurantInfoCard());
       default:
         return Container(
-          color: const Color(0xFFF5F5F5),
+          color: AppColors.background,
           child: Column(
             children: [
               _buildHeader(),
@@ -558,108 +596,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return first.substring(0, 1).toUpperCase();
   }
 
-  // ImageProvider<Object>? _avatarImageProvider() {
-  //   String? avatar;
-
-  //   if (_userProfile?.avatarUrl != null) {
-  //     avatar = _userProfile?.avatarUrl;
-  //   } else if (_deliveryProfile?.avatarUrl != null) {
-  //     avatar = _deliveryProfile?.avatarUrl;
-  //   } else if (_ownerProfile?.avatarUrl != null) {
-  //     avatar = _ownerProfile?.avatarUrl;
-  //   }
-
-  //   if (avatar == null || avatar.trim().isEmpty) return null;
-  //   if (avatar.startsWith('/')) {
-  //     return NetworkImage('${AuthService.baseUrl}$avatar');
-  //   }
-  //   return NetworkImage(avatar);
-  // }
-
   ImageProvider<Object>? _avatarImageProvider() {
     String? avatar;
 
     if (_userProfile?.avatarUrl != null) {
-      // Changed from avatarUrl
       avatar = _userProfile?.avatarUrl;
     } else if (_deliveryProfile?.avatarUrl != null) {
-      // Changed from avatarUrl
       avatar = _deliveryProfile?.avatarUrl;
     } else if (_ownerProfile?.avatarUrl != null) {
-      // Changed from avatarUrl
       avatar = _ownerProfile?.avatarUrl;
     }
 
     if (avatar == null || avatar.trim().isEmpty) return null;
-
-    // Local file path (not HTTP)
     return FileImage(File(avatar));
   }
-
-  // Future<void> _pickAndUploadAvatar() async {
-  //   if (_userId == null) return;
-  //   final picker = ImagePicker();
-  //   final XFile? file = await picker.pickImage(
-  //     source: ImageSource.gallery,
-  //     imageQuality: 80,
-  //   );
-  //   if (file == null) return;
-
-  //   final bytes = await file.readAsBytes();
-  //   final base64Image = base64Encode(bytes);
-  //   final dataUri = 'data:image/png;base64,$base64Image';
-  //   String? uploadedUrl;
-
-  //   if (_role == 'user') {
-  //     uploadedUrl = await _authService.uploadAvatar(_userId!, dataUri);
-  //   } else if (_role == 'owner') {
-  //     uploadedUrl = await _authService.uploadOwnerAvatar(_userId!, dataUri);
-  //   } else if (_role == 'delivery') {
-  //     uploadedUrl = await _authService.uploadDeliveryAvatar(_userId!, dataUri);
-  //   }
-
-  //   if (uploadedUrl != null) {
-  //     setState(() {
-  //       if (_userProfile != null) {
-  //         _userProfile = UserProfile(
-  //           id: _userProfile!.id,
-  //           email: _userProfile!.email,
-  //           name: _userProfile!.name,
-  //           location: _userProfile!.location,
-  //           cuisinePreferences: _userProfile!.cuisinePreferences,
-  //           budget: _userProfile!.budget,
-  //           dietaryRestrictions: _userProfile!.dietaryRestrictions,
-  //           notificationsEnabled: _userProfile!.notificationsEnabled,
-  //           darkModeEnabled: _userProfile!.darkModeEnabled,
-  //           avatarUrl: uploadedUrl,
-  //         );
-  //       } else if (_deliveryProfile != null) {
-  //         _deliveryProfile = DeliveryProfile(
-  //           id: _deliveryProfile!.id,
-  //           email: _deliveryProfile!.email,
-  //           name: _deliveryProfile!.name,
-  //           phoneNumber: _deliveryProfile!.phoneNumber,
-  //           vehicleType: _deliveryProfile!.vehicleType,
-  //           avatarUrl: uploadedUrl,
-  //         );
-  //       } else if (_ownerProfile != null) {
-  //         _ownerProfile = OwnerProfile(
-  //           id: _ownerProfile!.id,
-  //           email: _ownerProfile!.email,
-  //           name: _ownerProfile!.name,
-  //           restaurantName: _ownerProfile!.restaurantName,
-  //           restaurantAddress: _ownerProfile!.restaurantAddress,
-  //           cuisineTypes: _ownerProfile!.cuisineTypes,
-  //           avatarUrl: uploadedUrl,
-  //         );
-  //       }
-  //       _avatarUrl = uploadedUrl;
-  //     });
-  //     _showSuccessSnackBar("Avatar uploaded successfully");
-  //   } else {
-  //     _showErrorSnackBar("Failed to upload avatar");
-  //   }
-  // }
 
   Future<void> _pickAndUploadAvatar() async {
     if (_userId == null) return;
@@ -694,7 +644,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             dietaryRestrictions: _userProfile!.dietaryRestrictions,
             notificationsEnabled: _userProfile!.notificationsEnabled,
             darkModeEnabled: _userProfile!.darkModeEnabled,
-            avatarUrl: uploadedPath, // Changed from avatarUrl
+            avatarUrl: uploadedPath,
           );
         } else if (_deliveryProfile != null) {
           _deliveryProfile = DeliveryProfile(
@@ -704,7 +654,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             phoneNumber: _deliveryProfile!.phoneNumber,
             vehicleType: _deliveryProfile!.vehicleType,
             avatarUrl: uploadedPath,
-            // Changed from avatarUrl
           );
         } else if (_ownerProfile != null) {
           _ownerProfile = OwnerProfile(
@@ -714,7 +663,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             restaurantName: _ownerProfile!.restaurantName,
             restaurantAddress: _ownerProfile!.restaurantAddress,
             cuisineTypes: _ownerProfile!.cuisineTypes,
-            avatarUrl: uploadedPath, // Changed from avatarUrl
+            avatarUrl: uploadedPath,
           );
         }
         _avatarUrl = uploadedPath;
@@ -727,19 +676,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildHeader() {
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF3B82F6), Color(0xFF8B5CF6)],
-        ),
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        gradient: AppColors.gradientPrimary,
+        borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(32),
           bottomRight: Radius.circular(32),
         ),
         boxShadow: [
           BoxShadow(
-            color: Color(0x1A000000),
-            blurRadius: 10,
-            offset: Offset(0, 4),
+            color: AppColors.primaryOrange.withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
@@ -774,13 +721,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     bottom: 0,
                     child: InkWell(
                       onTap: () => _pickAndUploadAvatar(),
-                      child: CircleAvatar(
-                        radius: 16,
-                        backgroundColor: Colors.white,
-                        child: Icon(
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          gradient: AppColors.gradientPrimary,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primaryOrange.withOpacity(0.4),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
                           Icons.edit,
                           size: 16,
-                          color: Theme.of(context).primaryColor,
+                          color: Colors.white,
                         ),
                       ),
                     ),
@@ -798,6 +756,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         color: Colors.white,
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
+                        shadows: [
+                          Shadow(
+                            color: Colors.black26,
+                            blurRadius: 4,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 6),
@@ -825,11 +790,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.primaryOrange.withOpacity(0.1)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
+              color: AppColors.primaryOrange.withOpacity(0.1),
+              blurRadius: 15,
+              offset: const Offset(0, 5),
             ),
           ],
         ),
@@ -839,7 +805,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             const Text(
               'Informations personnelles',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
             ),
             const SizedBox(height: 16),
             _buildTextField(
@@ -877,27 +847,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
       children: [
         Text(
           label,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
         ),
         const SizedBox(height: 8),
         TextField(
           controller: controller,
           keyboardType: keyboardType,
           decoration: InputDecoration(
-            prefixIcon: Icon(icon, color: Colors.grey[600], size: 20),
+            prefixIcon: Icon(icon, color: AppColors.primaryOrange, size: 20),
             filled: true,
-            fillColor: Colors.grey[50],
+            fillColor: AppColors.background,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(
+                color: AppColors.primaryOrange.withOpacity(0.2),
+              ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(
+                color: AppColors.primaryOrange.withOpacity(0.2),
+              ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 2),
+              borderSide: const BorderSide(
+                color: AppColors.primaryOrange,
+                width: 2,
+              ),
             ),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,
@@ -914,11 +895,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.primaryOrange.withOpacity(0.1)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            color: AppColors.primaryOrange.withOpacity(0.1),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -928,12 +910,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           const Text(
             'Préférences culinaires',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
           ),
           const SizedBox(height: 16),
           const Text(
             'Types de cuisine préférés',
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
           ),
           const SizedBox(height: 12),
           Wrap(
@@ -947,14 +937,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF3B82F6), Color(0xFF8B5CF6)],
-                    ),
+                    gradient: AppColors.gradientPrimary,
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF3B82F6).withOpacity(0.2),
+                        color: AppColors.primaryOrange.withOpacity(0.3),
                         blurRadius: 4,
+                        offset: const Offset(0, 2),
                       ),
                     ],
                   ),
@@ -972,10 +961,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       const SizedBox(width: 8),
                       GestureDetector(
                         onTap: () => _removeCuisine(cuisine),
-                        child: const Icon(
-                          Icons.close,
-                          color: Colors.white,
-                          size: 16,
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.3),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.close,
+                            color: Colors.white,
+                            size: 14,
+                          ),
                         ),
                       ),
                     ],
@@ -991,16 +987,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    border: Border.all(color: Colors.grey[300]!),
+                    border: Border.all(
+                      color: AppColors.primaryOrange.withOpacity(0.3),
+                    ),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Text(
-                    '+ Ajouter',
-                    style: TextStyle(
-                      color: Colors.grey[700],
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.add, color: AppColors.primaryOrange, size: 16),
+                      SizedBox(width: 4),
+                      Text(
+                        'Ajouter',
+                        style: TextStyle(
+                          color: AppColors.primaryOrange,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -1012,14 +1017,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               const Text(
                 'Budget moyen par repas',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-              ),
-              Text(
-                '${_budgetValue.toInt()}€',
                 style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.grey[600],
-                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  gradient: AppColors.gradientPrimary.scale(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '${_budgetValue.toInt()}€',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.primaryOrange,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
@@ -1027,15 +1046,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: 12),
           Row(
             children: [
-              Icon(Icons.attach_money, color: Colors.grey[600], size: 20),
+              Icon(
+                Icons.attach_money,
+                color: AppColors.primaryOrange,
+                size: 20,
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: SliderTheme(
                   data: SliderTheme.of(context).copyWith(
-                    activeTrackColor: const Color(0xFF3B82F6),
-                    inactiveTrackColor: Colors.grey[300],
-                    thumbColor: const Color(0xFF3B82F6),
-                    overlayColor: const Color(0xFF3B82F6).withOpacity(0.2),
+                    activeTrackColor: AppColors.primaryOrange,
+                    inactiveTrackColor: AppColors.primaryOrange.withOpacity(
+                      0.2,
+                    ),
+                    thumbColor: AppColors.primaryOrange,
+                    overlayColor: AppColors.primaryOrange.withOpacity(0.2),
                     trackHeight: 4,
                   ),
                   child: Slider(
@@ -1064,11 +1089,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
                       ),
                     ),
+                    const SizedBox(height: 2),
                     Text(
                       'Végétarien, sans gluten, etc.',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                   ],
                 ),
@@ -1078,7 +1108,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 onChanged: (value) {
                   setState(() => _dietaryRestrictions = value);
                 },
-                activeColor: const Color(0xFF3B82F6),
+                activeColor: AppColors.primaryOrange,
               ),
             ],
           ),
@@ -1092,11 +1122,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.primaryOrange.withOpacity(0.1)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            color: AppColors.primaryOrange.withOpacity(0.1),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -1106,7 +1137,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           const Text(
             'Paramètres',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
           ),
           const SizedBox(height: 16),
           _buildSettingRow(
@@ -1150,7 +1185,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }) {
     return Row(
       children: [
-        Icon(icon, color: Colors.grey[600], size: 20),
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            gradient: AppColors.gradientPrimary.scale(0.2),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: AppColors.primaryOrange, size: 20),
+        ),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
@@ -1161,11 +1203,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
                 ),
               ),
               Text(
                 subtitle,
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                ),
               ),
             ],
           ),
@@ -1173,7 +1219,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Switch(
           value: value,
           onChanged: onChanged,
-          activeColor: const Color(0xFF3B82F6),
+          activeColor: AppColors.primaryOrange,
         ),
       ],
     );
@@ -1190,17 +1236,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _saveChanges();
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF3B82F6),
-              foregroundColor: Colors.white,
-              elevation: 4,
-              shadowColor: const Color(0xFF3B82F6).withOpacity(0.3),
+              backgroundColor: Colors.transparent,
+              shadowColor: Colors.transparent,
+              padding: EdgeInsets.zero,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: const Text(
-              'Sauvegarder les modifications',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            child: Ink(
+              decoration: BoxDecoration(
+                gradient: AppColors.gradientPrimary,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primaryOrange.withOpacity(0.4),
+                    blurRadius: 15,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Container(
+                alignment: Alignment.center,
+                child: const Text(
+                  'Sauvegarder les modifications',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
             ),
           ),
         ),
@@ -1217,7 +1282,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             style: OutlinedButton.styleFrom(
               foregroundColor: Colors.red,
-              side: const BorderSide(color: Colors.red),
+              side: const BorderSide(color: Colors.red, width: 2),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -1231,7 +1296,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // ==================== DELIVERY PROFILE ====================
   Widget _buildDeliveryInfoCard() {
     return Container(
-      color: const Color(0xFFF5F5F5),
+      color: AppColors.background,
       child: Column(
         children: [
           _buildDeliveryHeader(),
@@ -1260,19 +1325,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     String displayEmail = _deliveryProfile?.email ?? '';
 
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF3B82F6), Color(0xFF8B5CF6)],
-        ),
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        gradient: AppColors.gradientPrimary,
+        borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(32),
           bottomRight: Radius.circular(32),
         ),
         boxShadow: [
           BoxShadow(
-            color: Color(0x1A000000),
-            blurRadius: 10,
-            offset: Offset(0, 4),
+            color: AppColors.primaryOrange.withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
@@ -1307,13 +1370,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     bottom: 0,
                     child: InkWell(
                       onTap: () => _pickAndUploadAvatar(),
-                      child: CircleAvatar(
-                        radius: 16,
-                        backgroundColor: Colors.white,
-                        child: Icon(
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          gradient: AppColors.gradientPrimary,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                        ),
+                        child: const Icon(
                           Icons.edit,
                           size: 16,
-                          color: Theme.of(context).primaryColor,
+                          color: Colors.white,
                         ),
                       ),
                     ),
@@ -1348,7 +1415,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.green.shade400,
+                        color: Colors.white.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Row(
@@ -1388,11 +1455,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.primaryOrange.withOpacity(0.1)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
+              color: AppColors.primaryOrange.withOpacity(0.1),
+              blurRadius: 15,
+              offset: const Offset(0, 5),
             ),
           ],
         ),
@@ -1402,7 +1470,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             const Text(
               'Informations personnelles',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
             ),
             const SizedBox(height: 16),
             _buildTextField(
@@ -1428,11 +1500,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.primaryOrange.withOpacity(0.1)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            color: AppColors.primaryOrange.withOpacity(0.1),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -1442,7 +1515,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           const Text(
             'Informations de livraison',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
           ),
           const SizedBox(height: 16),
           _buildTextField(
@@ -1467,11 +1544,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.primaryOrange.withOpacity(0.1)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            color: AppColors.primaryOrange.withOpacity(0.1),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -1481,7 +1559,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           const Text(
             'Préférences',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
           ),
           const SizedBox(height: 16),
           _buildSettingRow(
@@ -1493,6 +1575,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               setState(() => _notificationsEnabled = value);
             },
           ),
+          const SizedBox(height: 16),
           _buildSettingRow(
             icon: Icons.fingerprint_rounded,
             title: 'Connexion biométrique',
@@ -1516,17 +1599,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _saveChanges();
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF3B82F6),
-              foregroundColor: Colors.white,
-              elevation: 4,
-              shadowColor: const Color(0xFF3B82F6).withOpacity(0.3),
+              backgroundColor: Colors.transparent,
+              shadowColor: Colors.transparent,
+              padding: EdgeInsets.zero,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: const Text(
-              'Sauvegarder les modifications',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            child: Ink(
+              decoration: BoxDecoration(
+                gradient: AppColors.gradientPrimary,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primaryOrange.withOpacity(0.4),
+                    blurRadius: 15,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Container(
+                alignment: Alignment.center,
+                child: const Text(
+                  'Sauvegarder les modifications',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
             ),
           ),
         ),
@@ -1543,7 +1645,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             style: OutlinedButton.styleFrom(
               foregroundColor: Colors.red,
-              side: const BorderSide(color: Colors.red),
+              side: const BorderSide(color: Colors.red, width: 2),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -1557,7 +1659,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // ==================== OWNER/RESTAURANT PROFILE ====================
   Widget _buildRestaurantInfoCard() {
     return Container(
-      color: const Color(0xFFF5F5F5),
+      color: AppColors.background,
       child: Column(
         children: [
           _buildRestaurantHeader(),
@@ -1586,22 +1688,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildRestaurantHeader() {
     String displayName = _ownerProfile?.name ?? 'Chargement...';
     String displayEmail = _ownerProfile?.email ?? '';
-    String restaurantName = _ownerProfile?.restaurantName ?? 'Mon Restaurant';
 
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF10B981), Color(0xFF059669)],
-        ),
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        gradient: AppColors.gradientPrimary,
+        borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(32),
           bottomRight: Radius.circular(32),
         ),
         boxShadow: [
           BoxShadow(
-            color: Color(0x1A000000),
-            blurRadius: 10,
-            offset: Offset(0, 4),
+            color: AppColors.primaryOrange.withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
@@ -1636,13 +1735,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     bottom: 0,
                     child: InkWell(
                       onTap: () => _pickAndUploadAvatar(),
-                      child: CircleAvatar(
-                        radius: 16,
-                        backgroundColor: Colors.white,
-                        child: Icon(
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          gradient: AppColors.gradientPrimary,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                        ),
+                        child: const Icon(
                           Icons.edit,
                           size: 16,
-                          color: Theme.of(context).primaryColor,
+                          color: Colors.white,
                         ),
                       ),
                     ),
@@ -1679,22 +1782,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.3),
-                        ),
                       ),
-                      child: Row(
+                      child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(
-                            Icons.restaurant,
-                            color: Colors.white,
-                            size: 14,
-                          ),
-                          const SizedBox(width: 4),
+                          Icon(Icons.restaurant, color: Colors.white, size: 14),
+                          SizedBox(width: 4),
                           Text(
-                            restaurantName,
-                            style: const TextStyle(
+                            'Livreur actif',
+                            style: TextStyle(
                               color: Colors.white,
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
@@ -1720,11 +1816,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.primaryOrange.withOpacity(0.1)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
+              color: AppColors.primaryOrange.withOpacity(0.1),
+              blurRadius: 15,
+              offset: const Offset(0, 5),
             ),
           ],
         ),
@@ -1734,7 +1831,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             const Text(
               'Informations personnelles',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
             ),
             const SizedBox(height: 16),
             _buildTextField(
@@ -1760,11 +1861,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.primaryOrange.withOpacity(0.1)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            color: AppColors.primaryOrange.withOpacity(0.1),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -1774,7 +1876,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           const Text(
             'Informations du restaurant',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
           ),
           const SizedBox(height: 16),
           _buildTextField(
@@ -1798,11 +1904,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.primaryOrange.withOpacity(0.1)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            color: AppColors.primaryOrange.withOpacity(0.1),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -1815,19 +1922,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               const Text(
                 'Types de cuisine',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
               ),
               GestureDetector(
                 onTap: _showAddCuisineDialog,
                 child: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF10B981).withOpacity(0.1),
+                    color: AppColors.primaryOrange.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(
                     Icons.add,
-                    color: Color(0xFF10B981),
+                    color: AppColors.primaryOrange,
                     size: 20,
                   ),
                 ),
@@ -1844,13 +1955,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Icon(
                       Icons.restaurant,
                       size: 48,
-                      color: Colors.grey.shade400,
+                      color: AppColors.textSecondary.withOpacity(0.5),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'Aucun type de cuisine ajouté',
                       style: TextStyle(
-                        color: Colors.grey.shade600,
+                        color: AppColors.textSecondary,
                         fontSize: 14,
                       ),
                     ),
@@ -1860,7 +1971,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       icon: const Icon(Icons.add, size: 16),
                       label: const Text('Ajouter maintenant'),
                       style: TextButton.styleFrom(
-                        foregroundColor: const Color(0xFF10B981),
+                        foregroundColor: AppColors.primaryOrange,
                       ),
                     ),
                   ],
@@ -1879,14 +1990,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         vertical: 8,
                       ),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF10B981), Color(0xFF059669)],
-                        ),
+                        gradient: AppColors.gradientPrimary,
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF10B981).withOpacity(0.2),
+                            color: AppColors.primaryOrange.withOpacity(0.3),
                             blurRadius: 4,
+                            offset: const Offset(0, 2),
                           ),
                         ],
                       ),
@@ -1904,10 +2014,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           const SizedBox(width: 8),
                           GestureDetector(
                             onTap: () => _removeCuisine(cuisine),
-                            child: const Icon(
-                              Icons.close,
-                              color: Colors.white,
-                              size: 16,
+                            child: Container(
+                              padding: const EdgeInsets.all(2),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.3),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.close,
+                                color: Colors.white,
+                                size: 14,
+                              ),
                             ),
                           ),
                         ],
@@ -2030,11 +2147,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.primaryOrange.withOpacity(0.1)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            color: AppColors.primaryOrange.withOpacity(0.1),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -2044,7 +2162,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           const Text(
             'Paramètres',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
           ),
           const SizedBox(height: 16),
           _buildSettingRow(
@@ -2079,17 +2201,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _saveChanges();
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF10B981),
-              foregroundColor: Colors.white,
-              elevation: 4,
-              shadowColor: const Color(0xFF10B981).withOpacity(0.3),
+              backgroundColor: Colors.transparent,
+              shadowColor: Colors.transparent,
+              padding: EdgeInsets.zero,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: const Text(
-              'Sauvegarder les modifications',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            child: Ink(
+              decoration: BoxDecoration(
+                gradient: AppColors.gradientPrimary,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primaryOrange.withOpacity(0.4),
+                    blurRadius: 15,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Container(
+                alignment: Alignment.center,
+                child: const Text(
+                  'Sauvegarder les modifications',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
             ),
           ),
         ),
@@ -2106,7 +2247,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             style: OutlinedButton.styleFrom(
               foregroundColor: Colors.red,
-              side: const BorderSide(color: Colors.red),
+              side: const BorderSide(color: Colors.red, width: 2),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),

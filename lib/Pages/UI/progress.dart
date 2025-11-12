@@ -1,35 +1,131 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_app_project/Pages/UI/AppColors.dart';
 
-class Progress extends StatelessWidget {
-  final double value; // Valeur de 0.0 à 100.0
+class CustomProgress extends StatelessWidget {
+  final double value;
+  final String? label;
+  final bool showPercentage;
   final double height;
-  final Color backgroundColor;
-  final Color foregroundColor;
 
-  const Progress({
+  const CustomProgress({
     Key? key,
     required this.value,
-    this.height = 8.0,
-    this.backgroundColor = const Color(0xFFB3D4FC), // équivalent bg-primary/20
-    this.foregroundColor = const Color(0xFF3B82F6), // équivalent bg-primary
+    this.label,
+    this.showPercentage = true,
+    this.height = 8,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(height / 2),
-      child: Stack(
-        children: [
-          Container(height: height, color: backgroundColor),
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (label != null) ...[
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                label!,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              if (showPercentage)
+                Text(
+                  '${(value * 100).toInt()}%',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primaryOrange,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+        ],
+        ClipRRect(
+          borderRadius: BorderRadius.circular(height / 2),
+          child: SizedBox(
             height: height,
-            width:
-                value.clamp(0, 100) / 100 * MediaQuery.of(context).size.width,
-            color: foregroundColor,
+            child: LinearProgressIndicator(
+              value: value,
+              backgroundColor: AppColors.primaryOrange.withOpacity(0.1),
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                AppColors.primaryOrange,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class CircularProgress extends StatelessWidget {
+  final double value;
+  final double size;
+  final double strokeWidth;
+  final String? label;
+  final bool showPercentage;
+
+  const CircularProgress({
+    Key? key,
+    required this.value,
+    this.size = 80,
+    this.strokeWidth = 8,
+    this.label,
+    this.showPercentage = true,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: size,
+          height: size,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              SizedBox(
+                width: size,
+                height: size,
+                child: CircularProgressIndicator(
+                  value: value,
+                  strokeWidth: strokeWidth,
+                  backgroundColor: AppColors.primaryOrange.withOpacity(0.1),
+                  valueColor: const AlwaysStoppedAnimation<Color>(
+                    AppColors.primaryOrange,
+                  ),
+                ),
+              ),
+              if (showPercentage)
+                Text(
+                  '${(value * 100).toInt()}%',
+                  style: TextStyle(
+                    fontSize: size / 4,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primaryOrange,
+                  ),
+                ),
+            ],
+          ),
+        ),
+        if (label != null) ...[
+          const SizedBox(height: 12),
+          Text(
+            label!,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
           ),
         ],
-      ),
+      ],
     );
   }
 }

@@ -1,63 +1,44 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_app_project/Pages/UI/AppColors.dart';
 
 class ScrollArea extends StatelessWidget {
   final Widget child;
-  final Axis scrollDirection;
+  final double? maxHeight;
+  final EdgeInsets? padding;
+  final ScrollPhysics? physics;
 
   const ScrollArea({
     Key? key,
     required this.child,
-    this.scrollDirection = Axis.vertical,
+    this.maxHeight,
+    this.padding,
+    this.physics,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return ScrollConfiguration(
-      behavior: _CustomScrollBehavior(),
-      child: SingleChildScrollView(
-        scrollDirection: scrollDirection,
-        child: child,
+    return Container(
+      constraints: maxHeight != null
+          ? BoxConstraints(maxHeight: maxHeight!)
+          : null,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.primaryOrange.withOpacity(0.2)),
       ),
-    );
-  }
-}
-
-/// Comportement personnalisé pour cacher le glow par défaut
-class _CustomScrollBehavior extends ScrollBehavior {
-  @override
-  Widget buildScrollbar(
-    BuildContext context,
-    Widget child,
-    ScrollableDetails details,
-  ) {
-    return _CustomScrollBar(child: child, details: details);
-  }
-
-  @override
-  Widget buildOverscrollIndicator(
-    BuildContext context,
-    Widget child,
-    ScrollableDetails details,
-  ) {
-    return child;
-  }
-}
-
-class _CustomScrollBar extends StatelessWidget {
-  final Widget child;
-  final ScrollableDetails details;
-
-  const _CustomScrollBar({Key? key, required this.child, required this.details})
-    : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scrollbar(
-      controller: details.controller,
-      thumbVisibility: true,
-      thickness: 8,
-      radius: const Radius.circular(10),
-      child: child,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Scrollbar(
+          thumbVisibility: true,
+          thickness: 6,
+          radius: const Radius.circular(3),
+          child: SingleChildScrollView(
+            padding: padding ?? const EdgeInsets.all(16),
+            physics: physics,
+            child: child,
+          ),
+        ),
+      ),
     );
   }
 }

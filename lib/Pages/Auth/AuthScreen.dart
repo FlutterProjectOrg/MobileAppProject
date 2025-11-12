@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:mobile_app_project/Pages/Auth/ForgotPasswordDialog.dart';
+import 'package:mobile_app_project/Pages/UI/AppColors.dart';
 import 'package:mobile_app_project/services/Auth/LocalAuthService.dart';
 import 'package:mobile_app_project/services/Auth/LocalGoogleAuth.dart';
 import 'package:mobile_app_project/services/Auth/biometric_service.dart';
@@ -18,7 +19,6 @@ class AuthScreen extends StatefulWidget {
 
 class _AuthScreenState extends State<AuthScreen>
     with SingleTickerProviderStateMixin {
-  // final _authService = AuthService();
   final _authService = LocalAuthService.instance;
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
@@ -31,6 +31,7 @@ class _AuthScreenState extends State<AuthScreen>
   final storage = StorageService();
   final biometric = BiometricService();
   String selectedRole = 'user';
+
   final Map<String, Map<String, dynamic>> roleOptions = {
     'user': {
       'label': 'Client',
@@ -103,7 +104,6 @@ class _AuthScreenState extends State<AuthScreen>
         await prefs.setString('role', user?.role ?? 'user');
         await storage.saveUserId(userId!);
 
-        // 🧩 Étape biométrie : proposer l'activation si non déjà activée
         final biometricEnabled = await storage.read('biometric_enabled');
         final biometricUserId = await storage.read('biometric_user_id');
 
@@ -128,18 +128,41 @@ class _AuthScreenState extends State<AuthScreen>
     return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text("Activer la connexion par empreinte ?"),
-        content: Text(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          "Activer la connexion par empreinte ?",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        content: const Text(
           "Souhaitez-vous activer la reconnaissance biométrique pour ce compte ?",
+          style: TextStyle(color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text("Non"),
+            child: Text("Non", style: TextStyle(color: Colors.grey[600])),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text("Oui"),
+            style: TextButton.styleFrom(
+              backgroundColor: AppColors.primaryOrange.withOpacity(0.1),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 8),
+              child: Text(
+                "Oui",
+                style: TextStyle(
+                  color: AppColors.primaryOrange,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -266,7 +289,7 @@ class _AuthScreenState extends State<AuthScreen>
             ),
           ],
         ),
-        backgroundColor: const Color(0xFF10B981),
+        backgroundColor: AppColors.primaryOrange,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         margin: const EdgeInsets.all(16),
@@ -287,14 +310,14 @@ class _AuthScreenState extends State<AuthScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Color(0xFFFFF7ED), // orange-50
-              Color(0xFFFEF3C7), // amber-50
-              Color(0xFFFEE2E2), // red-50
+              AppColors.background,
+              AppColors.primaryOrange.withOpacity(0.1),
+              AppColors.primaryYellow.withOpacity(0.1),
             ],
           ),
         ),
@@ -311,7 +334,7 @@ class _AuthScreenState extends State<AuthScreen>
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: AppColors.primaryOrange.withOpacity(0.1),
                         blurRadius: 20,
                         offset: const Offset(0, 10),
                       ),
@@ -338,39 +361,54 @@ class _AuthScreenState extends State<AuthScreen>
   Widget _buildHeader() {
     return Column(
       children: [
-        Container(
-          width: 80,
-          height: 80,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF3B82F6), Color(0xFF8B5CF6)],
-            ),
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF3B82F6).withOpacity(0.3),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: const Icon(Icons.restaurant, color: Colors.white, size: 48),
-        ),
+        // ✅ Logo statique sans animations
+        _buildStaticLogo(),
         const SizedBox(height: 16),
-        const Text(
-          'Food Finder',
-          style: TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF1F2937),
+        ShaderMask(
+          shaderCallback: (bounds) =>
+              AppColors.gradientPrimary.createShader(bounds),
+          child: const Text(
+            'FoodFinder',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+              letterSpacing: -0.5,
+            ),
           ),
         ),
         const SizedBox(height: 8),
         Text(
           _isSignup ? 'Créez votre compte' : 'Connectez-vous à votre compte',
-          style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+          style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
         ),
       ],
+    );
+  }
+
+  // ✅ Logo statique (sans animations)
+  Widget _buildStaticLogo() {
+    return Container(
+      width: 80,
+      height: 80,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryOrange.withOpacity(0.3),
+            blurRadius: 20,
+            spreadRadius: 5,
+          ),
+        ],
+      ),
+      child: const Center(
+        child: Icon(
+          Icons.restaurant_menu,
+          size: 40,
+          color: AppColors.primaryOrange,
+        ),
+      ),
     );
   }
 
@@ -455,18 +493,14 @@ class _AuthScreenState extends State<AuthScreen>
                     'Mot de passe oublié?',
                     style: TextStyle(
                       fontSize: 14,
-                      color: Color(0xFF3B82F6),
+                      color: AppColors.primaryOrange,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
-
           _buildDivider(),
           const SizedBox(height: 24),
-
           _buildGoogleButton(),
-          const SizedBox(height: 16),
-
           const SizedBox(height: 16),
           _buildToggleSignup(),
         ],
@@ -475,32 +509,30 @@ class _AuthScreenState extends State<AuthScreen>
   }
 
   Widget _buildBiometricButton() {
-    return Container(
-      width: 56,
-      height: 56,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF8B5CF6), Color(0xFF3B82F6)],
+    return Center(
+      child: Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: AppColors.gradientPrimary,
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primaryOrange.withOpacity(0.4),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Color(0xFF3B82F6).withOpacity(0.4),
-            blurRadius: 12,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        shape: CircleBorder(),
-        child: InkWell(
-          onTap: _loginWithBiometrics,
-          customBorder: CircleBorder(),
-          child: Center(
-            child: Icon(Icons.fingerprint, color: Colors.white, size: 28),
+        child: Material(
+          color: Colors.transparent,
+          shape: const CircleBorder(),
+          child: InkWell(
+            onTap: _loginWithBiometrics,
+            customBorder: const CircleBorder(),
+            child: const Center(
+              child: Icon(Icons.fingerprint, color: Colors.white, size: 28),
+            ),
           ),
         ),
       ),
@@ -510,16 +542,16 @@ class _AuthScreenState extends State<AuthScreen>
   Widget _buildRoleDropdown() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        color: AppColors.background,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[300]!),
+        border: Border.all(color: AppColors.primaryOrange.withOpacity(0.2)),
       ),
       child: DropdownButtonFormField<String>(
         value: selectedRole,
         decoration: InputDecoration(
           prefixIcon: Icon(
             roleOptions[selectedRole]!['icon'] as IconData,
-            color: Colors.grey[700],
+            color: AppColors.primaryOrange,
             size: 20,
           ),
           border: InputBorder.none,
@@ -528,14 +560,17 @@ class _AuthScreenState extends State<AuthScreen>
             vertical: 14,
           ),
         ),
-        icon: Icon(Icons.keyboard_arrow_down, color: Colors.grey[600]),
+        icon: const Icon(
+          Icons.keyboard_arrow_down,
+          color: AppColors.textSecondary,
+        ),
         dropdownColor: Colors.white,
         borderRadius: BorderRadius.circular(12),
         elevation: 8,
         isExpanded: true,
         style: const TextStyle(
           fontSize: 16,
-          color: Color(0xFF1F2937),
+          color: AppColors.textPrimary,
           fontWeight: FontWeight.w500,
         ),
         selectedItemBuilder: (BuildContext context) {
@@ -548,7 +583,7 @@ class _AuthScreenState extends State<AuthScreen>
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
-                    color: Color(0xFF1F2937),
+                    color: AppColors.textPrimary,
                   ),
                 ),
               ],
@@ -565,7 +600,7 @@ class _AuthScreenState extends State<AuthScreen>
                   Icon(
                     entry.value['icon'] as IconData,
                     size: 22,
-                    color: Colors.grey[700],
+                    color: AppColors.primaryOrange,
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -578,15 +613,15 @@ class _AuthScreenState extends State<AuthScreen>
                           style: const TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF1F2937),
+                            color: AppColors.textPrimary,
                           ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           entry.value['description'] as String,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 12,
-                            color: Colors.grey[600],
+                            color: AppColors.textSecondary,
                             fontWeight: FontWeight.normal,
                           ),
                           maxLines: 1,
@@ -621,7 +656,7 @@ class _AuthScreenState extends State<AuthScreen>
       style: const TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.w500,
-        color: Color(0xFF1F2937),
+        color: AppColors.textPrimary,
       ),
     );
   }
@@ -641,20 +676,28 @@ class _AuthScreenState extends State<AuthScreen>
       validator: validator,
       decoration: InputDecoration(
         hintText: hint,
-        prefixIcon: Icon(icon, color: Colors.grey[600], size: 20),
+        hintStyle: TextStyle(color: AppColors.textSecondary.withOpacity(0.5)),
+        prefixIcon: Icon(icon, color: AppColors.primaryOrange, size: 20),
         filled: true,
-        fillColor: Colors.grey[50],
+        fillColor: AppColors.background,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
+          borderSide: BorderSide(
+            color: AppColors.primaryOrange.withOpacity(0.2),
+          ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
+          borderSide: BorderSide(
+            color: AppColors.primaryOrange.withOpacity(0.2),
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 2),
+          borderSide: const BorderSide(
+            color: AppColors.primaryOrange,
+            width: 2,
+          ),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -674,22 +717,47 @@ class _AuthScreenState extends State<AuthScreen>
       child: ElevatedButton(
         onPressed: _isLoading ? null : _handleSubmit,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF3B82F6),
+          backgroundColor: Colors.transparent,
           foregroundColor: Colors.white,
+          shadowColor: Colors.transparent,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
           elevation: 0,
+          padding: EdgeInsets.zero,
         ),
-        child: _isLoading
-            ? const CircularProgressIndicator()
-            : Text(
-                _isSignup ? 'Créer un compte' : 'Se connecter',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: AppColors.gradientPrimary,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primaryOrange.withOpacity(0.4),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
               ),
+            ],
+          ),
+          child: Container(
+            alignment: Alignment.center,
+            child: _isLoading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : Text(
+                    _isSignup ? 'Créer un compte' : 'Se connecter',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+          ),
+        ),
       ),
     );
   }
@@ -697,15 +765,25 @@ class _AuthScreenState extends State<AuthScreen>
   Widget _buildDivider() {
     return Row(
       children: [
-        Expanded(child: Divider(color: Colors.grey[300], thickness: 1)),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text(
-            'Ou',
-            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+        Expanded(
+          child: Divider(
+            color: AppColors.textSecondary.withOpacity(0.3),
+            thickness: 1,
           ),
         ),
-        Expanded(child: Divider(color: Colors.grey[300], thickness: 1)),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          child: Text(
+            'Ou',
+            style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+          ),
+        ),
+        Expanded(
+          child: Divider(
+            color: AppColors.textSecondary.withOpacity(0.3),
+            thickness: 1,
+          ),
+        ),
       ],
     );
   }
@@ -728,8 +806,8 @@ class _AuthScreenState extends State<AuthScreen>
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
         style: OutlinedButton.styleFrom(
-          foregroundColor: const Color(0xFF1F2937),
-          side: BorderSide(color: Colors.grey[300]!),
+          foregroundColor: AppColors.textPrimary,
+          side: BorderSide(color: AppColors.primaryOrange.withOpacity(0.3)),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -752,11 +830,9 @@ class _AuthScreenState extends State<AuthScreen>
       await prefs.setString('role', user['role']);
       await storage.saveUserId(user['id']!);
 
-      // ✅ Vérifie si biométrie activée
       final biometricEnabled = await storage.isBiometricEnabled();
       final biometricUserId = await storage.getBiometricUserId();
 
-      // ✅ Si pas encore activée pour cet utilisateur, proposer
       if (!biometricEnabled || biometricUserId != userId) {
         final shouldEnable = await _showEnableBiometricDialog(context);
         if (shouldEnable == true) {
@@ -779,7 +855,7 @@ class _AuthScreenState extends State<AuthScreen>
           _isSignup
               ? 'Vous avez déjà un compte?'
               : "Vous n'avez pas de compte?",
-          style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+          style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
         ),
         TextButton(
           onPressed: _toggleSignup,
@@ -792,7 +868,7 @@ class _AuthScreenState extends State<AuthScreen>
             _isSignup ? 'Se connecter' : "S'inscrire",
             style: const TextStyle(
               fontSize: 14,
-              color: Color(0xFF3B82F6),
+              color: AppColors.primaryOrange,
               fontWeight: FontWeight.w600,
             ),
           ),

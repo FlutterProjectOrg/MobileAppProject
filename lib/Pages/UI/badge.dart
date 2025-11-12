@@ -1,78 +1,74 @@
 import 'package:flutter/material.dart';
-
-enum BadgeVariant { defaultVariant, secondary, destructive, outline }
+import 'package:mobile_app_project/Pages/UI/AppColors.dart';
 
 class Badge extends StatelessWidget {
+  final String label;
   final BadgeVariant variant;
-  final Widget? child;
-  final EdgeInsetsGeometry? padding;
-  final BorderRadiusGeometry? borderRadius;
-  final bool asChild;
+  final IconData? icon;
 
   const Badge({
     Key? key,
-    this.variant = BadgeVariant.defaultVariant,
-    this.child,
-    this.padding,
-    this.borderRadius,
-    this.asChild = false,
+    required this.label,
+    this.variant = BadgeVariant.primary,
+    this.icon,
   }) : super(key: key);
 
-  Color _backgroundColor(BuildContext context) {
+  Color _getBackgroundColor() {
     switch (variant) {
+      case BadgeVariant.primary:
+        return AppColors.primaryOrange;
       case BadgeVariant.secondary:
-        return Theme.of(context).colorScheme.secondary;
-      case BadgeVariant.destructive:
+        return AppColors.primaryYellow;
+      case BadgeVariant.success:
+        return AppColors.primaryOrange;
+      case BadgeVariant.warning:
+        return AppColors.primaryYellow;
+      case BadgeVariant.error:
         return Colors.red;
       case BadgeVariant.outline:
         return Colors.transparent;
-      case BadgeVariant.defaultVariant:
-        return Theme.of(context).colorScheme.primary;
     }
   }
 
-  Color _textColor(BuildContext context) {
-    switch (variant) {
-      case BadgeVariant.secondary:
-        return Colors.white;
-      case BadgeVariant.destructive:
-        return Colors.white;
-      case BadgeVariant.outline:
-        return Theme.of(context).textTheme.bodyLarge!.color!;
-      case BadgeVariant.defaultVariant:
-        return Colors.white;
-    }
-  }
-
-  BoxBorder? _border(BuildContext context) {
+  Color _getTextColor() {
     switch (variant) {
       case BadgeVariant.outline:
-        return Border.all(color: Theme.of(context).dividerColor);
+        return AppColors.primaryOrange;
       default:
-        return null;
+        return Colors.white;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final content = child ?? const SizedBox.shrink();
-
     return Container(
-      padding:
-          padding ?? const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: _backgroundColor(context),
-        borderRadius: borderRadius ?? BorderRadius.circular(8),
-        border: _border(context),
+        color: _getBackgroundColor(),
+        borderRadius: BorderRadius.circular(6),
+        border: variant == BadgeVariant.outline
+            ? Border.all(color: AppColors.primaryOrange)
+            : null,
       ),
-      child: DefaultTextStyle(
-        style: TextStyle(
-          color: _textColor(context),
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-        ),
-        child: content,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 12, color: _getTextColor()),
+            const SizedBox(width: 4),
+          ],
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: _getTextColor(),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
+
+enum BadgeVariant { primary, secondary, success, warning, error, outline }

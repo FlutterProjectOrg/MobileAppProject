@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_app_project/Pages/RestaurantCard.dart';
 import 'package:mobile_app_project/Pages/mock_data.dart';
+import 'package:mobile_app_project/Pages/UI/AppColors.dart';
 
 class FavoritesScreen extends StatefulWidget {
   final Function(int) onRestaurantClick;
@@ -35,7 +36,7 @@ class _FavoritesScreenState extends State<FavoritesScreen>
     final recommendations = mockRestaurants.sublist(1, 4);
 
     return Container(
-      color: const Color(0xFFF5F5F5),
+      color: AppColors.background,
       child: Column(
         children: [
           _buildHeader(),
@@ -66,19 +67,17 @@ class _FavoritesScreenState extends State<FavoritesScreen>
 
   Widget _buildHeader() {
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF3B82F6), Color(0xFF8B5CF6)],
-        ),
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        gradient: AppColors.gradientPrimary,
+        borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(32),
           bottomRight: Radius.circular(32),
         ),
         boxShadow: [
           BoxShadow(
-            color: Color(0x1A000000),
-            blurRadius: 10,
-            offset: Offset(0, 4),
+            color: AppColors.primaryOrange.withOpacity(0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -113,23 +112,26 @@ class _FavoritesScreenState extends State<FavoritesScreen>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.primaryOrange.withOpacity(0.1)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: AppColors.primaryOrange.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: TabBar(
         controller: _tabController,
         indicator: BoxDecoration(
-          color: const Color(0xFF3B82F6),
+          gradient: AppColors.gradientPrimary,
           borderRadius: BorderRadius.circular(12),
         ),
         labelColor: Colors.white,
-        unselectedLabelColor: Colors.grey[600],
+        unselectedLabelColor: AppColors.textSecondary,
         labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+        indicatorSize: TabBarIndicatorSize.tab,
+        dividerColor: Colors.transparent,
         tabs: const [
           Tab(
             child: Row(
@@ -175,7 +177,10 @@ class _FavoritesScreenState extends State<FavoritesScreen>
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Text(
               '${favorites.length} restaurants',
-              style: TextStyle(color: Colors.grey[600], fontSize: 14),
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 14,
+              ),
             ),
           ),
           ...favorites.map(
@@ -207,9 +212,9 @@ class _FavoritesScreenState extends State<FavoritesScreen>
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
+              const Text(
                 'Historique de recherche',
-                style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
               ),
               TextButton(
                 onPressed: () {
@@ -217,7 +222,11 @@ class _FavoritesScreenState extends State<FavoritesScreen>
                 },
                 child: const Text(
                   'Effacer',
-                  style: TextStyle(color: Color(0xFF3B82F6), fontSize: 14),
+                  style: TextStyle(
+                    color: AppColors.primaryOrange,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ],
@@ -246,7 +255,10 @@ class _FavoritesScreenState extends State<FavoritesScreen>
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Text(
             '${recommendations.length} suggestions pour vous',
-            style: TextStyle(color: Colors.grey[600], fontSize: 14),
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 14,
+            ),
           ),
         ),
         ...recommendations.map(
@@ -267,14 +279,21 @@ class _FavoritesScreenState extends State<FavoritesScreen>
       margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           colors: [
-            Color(0xFFFAF5FF), // purple-50
-            Color(0xFFFDF2F8), // pink-50
+            AppColors.primaryOrange.withOpacity(0.1),
+            AppColors.primaryYellow.withOpacity(0.1),
           ],
         ),
-        border: Border.all(color: const Color(0xFFE9D5FF)), // purple-200
+        border: Border.all(color: AppColors.primaryOrange.withOpacity(0.3)),
         borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryOrange.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -282,9 +301,16 @@ class _FavoritesScreenState extends State<FavoritesScreen>
           Container(
             width: 40,
             height: 40,
-            decoration: const BoxDecoration(
-              color: Color(0xFFA855F7), // purple-500
+            decoration: BoxDecoration(
+              gradient: AppColors.gradientPrimary,
               shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primaryOrange.withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: const Icon(
               Icons.auto_awesome,
@@ -302,13 +328,16 @@ class _FavoritesScreenState extends State<FavoritesScreen>
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF1F2937),
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
+                const Text(
                   'Basées sur vos préférences culinaires et votre localisation',
-                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 Wrap(
@@ -332,14 +361,22 @@ class _FavoritesScreenState extends State<FavoritesScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.grey[200],
+        color: Colors.white,
+        border: Border.all(color: AppColors.primaryOrange.withOpacity(0.3)),
         borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryOrange.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
       child: Text(
         text,
-        style: TextStyle(
+        style: const TextStyle(
           fontSize: 12,
-          color: Colors.grey[700],
+          color: AppColors.textSecondary,
           fontWeight: FontWeight.w500,
         ),
       ),
@@ -356,32 +393,36 @@ class _FavoritesScreenState extends State<FavoritesScreen>
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
         color: Colors.white,
+        border: Border.all(color: AppColors.primaryOrange.withOpacity(0.1)),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: AppColors.primaryOrange.withOpacity(0.05),
             blurRadius: 10,
-            offset: const Offset(0, 2),
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: Column(
         children: [
-          Icon(icon, size: 48, color: Colors.grey[400]),
+          Icon(icon, size: 48, color: AppColors.primaryOrange.withOpacity(0.5)),
           const SizedBox(height: 16),
           Text(
             title,
             style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF1F2937),
+              color: AppColors.textPrimary,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             message,
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+            style: const TextStyle(
+              fontSize: 14,
+              color: AppColors.textSecondary,
+            ),
           ),
         ],
       ),

@@ -1,87 +1,76 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_app_project/Pages/UI/AppColors.dart';
 
-class Popover extends StatefulWidget {
+class Popover extends StatelessWidget {
   final Widget child;
   final Widget content;
-  final Alignment alignment;
-  final double offset;
+  final PopoverDirection direction;
 
   const Popover({
     Key? key,
     required this.child,
     required this.content,
-    this.alignment = Alignment.center,
-    this.offset = 4.0,
+    this.direction = PopoverDirection.bottom,
   }) : super(key: key);
 
   @override
-  State<Popover> createState() => _PopoverState();
-}
-
-class _PopoverState extends State<Popover> {
-  final LayerLink _layerLink = LayerLink();
-  OverlayEntry? _overlayEntry;
-
-  void _showPopover() {
-    _overlayEntry = _createOverlayEntry();
-    Overlay.of(context).insert(_overlayEntry!);
+  Widget build(BuildContext context) {
+    return GestureDetector(onTap: () => _showPopover(context), child: child);
   }
 
-  void _hidePopover() {
-    _overlayEntry?.remove();
-    _overlayEntry = null;
-  }
-
-  OverlayEntry _createOverlayEntry() {
-    RenderBox renderBox = context.findRenderObject() as RenderBox;
-    final size = renderBox.size;
+  void _showPopover(BuildContext context) {
+    final RenderBox renderBox = context.findRenderObject() as RenderBox;
     final offset = renderBox.localToGlobal(Offset.zero);
+    final size = renderBox.size;
 
-    return OverlayEntry(
-      builder: (context) => Positioned(
-        left: offset.dx,
-        top: offset.dy + size.height + widget.offset,
-        width: size.width,
-        child: Material(
-          color: Colors.transparent,
-          child: CompositedTransformFollower(
-            link: _layerLink,
-            offset: Offset(0, size.height + widget.offset),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black26,
-                    blurRadius: 10,
-                    spreadRadius: 2,
+    showDialog(
+      context: context,
+      barrierColor: Colors.transparent,
+      builder: (context) => Stack(
+        children: [
+          GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: Container(color: Colors.transparent),
+          ),
+          Positioned(
+            left: direction == PopoverDirection.right
+                ? offset.dx + size.width + 8
+                : null,
+            right: direction == PopoverDirection.left
+                ? MediaQuery.of(context).size.width - offset.dx + 8
+                : null,
+            top: direction == PopoverDirection.bottom
+                ? offset.dy + size.height + 8
+                : null,
+            bottom: direction == PopoverDirection.top
+                ? MediaQuery.of(context).size.height - offset.dy + 8
+                : null,
+            child: Material(
+              color: Colors.transparent,
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 300),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppColors.primaryOrange.withOpacity(0.2),
                   ),
-                ],
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primaryOrange.withOpacity(0.15),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: content,
               ),
-              child: widget.content,
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return CompositedTransformTarget(
-      link: _layerLink,
-      child: GestureDetector(
-        behavior: HitTestBehavior.translucent,
-        onTap: () {
-          if (_overlayEntry == null) {
-            _showPopover();
-          } else {
-            _hidePopover();
-          }
-        },
-        child: widget.child,
+        ],
       ),
     );
   }
 }
+
+enum PopoverDirection { top, bottom, left, right }

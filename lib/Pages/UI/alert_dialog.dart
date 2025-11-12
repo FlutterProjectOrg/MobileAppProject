@@ -1,382 +1,179 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_app_project/Pages/UI/AppColors.dart';
 
-/// AlertDialog personnalisé pour Flutter - Équivalent de Radix UI AlertDialog
 class CustomAlertDialog extends StatelessWidget {
-  final String? title;
-  final String? description;
-  final Widget? titleWidget;
-  final Widget? descriptionWidget;
-  final String? actionLabel;
-  final String? cancelLabel;
-  final VoidCallback? onAction;
-  final VoidCallback? onCancel;
-  final Widget? header;
-  final Widget? footer;
-  final List<Widget>? actions;
-  final bool barrierDismissible;
-  final Color? actionColor;
-  final Color? cancelColor;
+  final String title;
+  final String message;
   final IconData? icon;
-  final Color? iconColor;
+  final String? confirmText;
+  final String? cancelText;
+  final VoidCallback? onConfirm;
+  final VoidCallback? onCancel;
+  final AlertType type;
 
   const CustomAlertDialog({
     Key? key,
-    this.title,
-    this.description,
-    this.titleWidget,
-    this.descriptionWidget,
-    this.actionLabel,
-    this.cancelLabel,
-    this.onAction,
-    this.onCancel,
-    this.header,
-    this.footer,
-    this.actions,
-    this.barrierDismissible = true,
-    this.actionColor,
-    this.cancelColor,
+    required this.title,
+    required this.message,
     this.icon,
-    this.iconColor,
+    this.confirmText,
+    this.cancelText,
+    this.onConfirm,
+    this.onCancel,
+    this.type = AlertType.info,
   }) : super(key: key);
 
-  /// Affiche l'AlertDialog
-  static Future<bool?> show({
-    required BuildContext context,
-    String? title,
-    String? description,
-    Widget? titleWidget,
-    Widget? descriptionWidget,
-    String? actionLabel,
-    String? cancelLabel,
-    VoidCallback? onAction,
-    VoidCallback? onCancel,
-    Widget? header,
-    Widget? footer,
-    List<Widget>? actions,
-    bool barrierDismissible = true,
-    Color? actionColor,
-    Color? cancelColor,
-    IconData? icon,
-    Color? iconColor,
-  }) {
-    return showDialog<bool>(
-      context: context,
-      barrierDismissible: barrierDismissible,
-      builder: (context) => CustomAlertDialog(
-        title: title,
-        description: description,
-        titleWidget: titleWidget,
-        descriptionWidget: descriptionWidget,
-        actionLabel: actionLabel,
-        cancelLabel: cancelLabel,
-        onAction: onAction,
-        onCancel: onCancel,
-        header: header,
-        footer: footer,
-        actions: actions,
-        actionColor: actionColor,
-        cancelColor: cancelColor,
-        icon: icon,
-        iconColor: iconColor,
-      ),
-    );
+  Color _getTypeColor() {
+    switch (type) {
+      case AlertType.success:
+        return AppColors.primaryOrange;
+      case AlertType.warning:
+        return AppColors.primaryYellow;
+      case AlertType.error:
+        return Colors.red;
+      case AlertType.info:
+        return AppColors.primaryOrange;
+    }
+  }
+
+  IconData _getTypeIcon() {
+    if (icon != null) return icon!;
+    switch (type) {
+      case AlertType.success:
+        return Icons.check_circle_outline;
+      case AlertType.warning:
+        return Icons.warning_amber_outlined;
+      case AlertType.error:
+        return Icons.error_outline;
+      case AlertType.info:
+        return Icons.info_outline;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final typeColor = _getTypeColor();
 
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 500),
         padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: typeColor.withOpacity(0.2),
+              blurRadius: 30,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Header personnalisé ou par défaut
-            if (header != null)
-              header!
-            else
-              _buildDefaultHeader(context, theme),
-
-            // Actions personnalisées ou par défaut
-            if (footer != null)
-              footer!
-            else if (actions != null)
-              _buildCustomActions(context)
-            else
-              _buildDefaultActions(context, theme),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    typeColor.withOpacity(0.1),
+                    typeColor.withOpacity(0.05),
+                  ],
+                ),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(_getTypeIcon(), color: typeColor, size: 40),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              message,
+              style: const TextStyle(
+                fontSize: 14,
+                color: AppColors.textSecondary,
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                if (cancelText != null) ...[
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: onCancel ?? () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(
+                          color: AppColors.primaryOrange.withOpacity(0.3),
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: Text(
+                        cancelText!,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                ],
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: onConfirm ?? () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      padding: EdgeInsets.zero,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Ink(
+                      decoration: BoxDecoration(
+                        gradient: AppColors.gradientPrimary,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        alignment: Alignment.center,
+                        child: Text(
+                          confirmText ?? 'OK',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
     );
   }
-
-  Widget _buildDefaultHeader(BuildContext context, ThemeData theme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        // Icône optionnelle
-        if (icon != null) ...[
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: (iconColor ?? theme.primaryColor).withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, size: 32, color: iconColor ?? theme.primaryColor),
-          ),
-          const SizedBox(height: 16),
-        ],
-
-        // Titre
-        if (titleWidget != null)
-          titleWidget!
-        else if (title != null)
-          Text(
-            title!,
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-            textAlign: TextAlign.center,
-          ),
-
-        const SizedBox(height: 12),
-
-        // Description
-        if (descriptionWidget != null)
-          descriptionWidget!
-        else if (description != null)
-          Text(
-            description!,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.textTheme.bodySmall?.color,
-            ),
-            textAlign: TextAlign.center,
-          ),
-
-        const SizedBox(height: 24),
-      ],
-    );
-  }
-
-  Widget _buildDefaultActions(BuildContext context, ThemeData theme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // Bouton d'action principal
-        if (actionLabel != null)
-          ElevatedButton(
-            onPressed: () {
-              onAction?.call();
-              Navigator.of(context).pop(true);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: actionColor ?? theme.primaryColor,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: Text(actionLabel!),
-          ),
-
-        const SizedBox(height: 12),
-
-        // Bouton d'annulation
-        if (cancelLabel != null)
-          OutlinedButton(
-            onPressed: () {
-              onCancel?.call();
-              Navigator.of(context).pop(false);
-            },
-            style: OutlinedButton.styleFrom(
-              foregroundColor: cancelColor ?? theme.textTheme.bodyLarge?.color,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              side: BorderSide(color: theme.dividerColor),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: Text(cancelLabel!),
-          ),
-      ],
-    );
-  }
-
-  Widget _buildCustomActions(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: actions!,
-    );
-  }
 }
 
-/// AlertDialog de confirmation
-class ConfirmationDialog extends StatelessWidget {
-  final String title;
-  final String description;
-  final String confirmLabel;
-  final String cancelLabel;
-  final VoidCallback? onConfirm;
-  final VoidCallback? onCancel;
-  final Color? confirmColor;
-  final IconData? icon;
-
-  const ConfirmationDialog({
-    Key? key,
-    required this.title,
-    required this.description,
-    this.confirmLabel = 'Confirmer',
-    this.cancelLabel = 'Annuler',
-    this.onConfirm,
-    this.onCancel,
-    this.confirmColor,
-    this.icon,
-  }) : super(key: key);
-
-  static Future<bool?> show({
-    required BuildContext context,
-    required String title,
-    required String description,
-    String confirmLabel = 'Confirmer',
-    String cancelLabel = 'Annuler',
-    VoidCallback? onConfirm,
-    VoidCallback? onCancel,
-    Color? confirmColor,
-    IconData? icon,
-  }) {
-    return CustomAlertDialog.show(
-      context: context,
-      title: title,
-      description: description,
-      actionLabel: confirmLabel,
-      cancelLabel: cancelLabel,
-      onAction: onConfirm,
-      onCancel: onCancel,
-      actionColor: confirmColor,
-      icon: icon,
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomAlertDialog(
-      title: title,
-      description: description,
-      actionLabel: confirmLabel,
-      cancelLabel: cancelLabel,
-      onAction: onConfirm,
-      onCancel: onCancel,
-      actionColor: confirmColor,
-      icon: icon,
-    );
-  }
-}
-
-/// AlertDialog destructif (pour les actions dangereuses)
-class DestructiveDialog extends StatelessWidget {
-  final String title;
-  final String description;
-  final String actionLabel;
-  final String cancelLabel;
-  final VoidCallback? onAction;
-  final VoidCallback? onCancel;
-
-  const DestructiveDialog({
-    Key? key,
-    required this.title,
-    required this.description,
-    this.actionLabel = 'Supprimer',
-    this.cancelLabel = 'Annuler',
-    this.onAction,
-    this.onCancel,
-  }) : super(key: key);
-
-  static Future<bool?> show({
-    required BuildContext context,
-    required String title,
-    required String description,
-    String actionLabel = 'Supprimer',
-    String cancelLabel = 'Annuler',
-    VoidCallback? onAction,
-    VoidCallback? onCancel,
-  }) {
-    return CustomAlertDialog.show(
-      context: context,
-      title: title,
-      description: description,
-      actionLabel: actionLabel,
-      cancelLabel: cancelLabel,
-      onAction: onAction,
-      onCancel: onCancel,
-      actionColor: Colors.red,
-      icon: Icons.warning_rounded,
-      iconColor: Colors.red,
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomAlertDialog(
-      title: title,
-      description: description,
-      actionLabel: actionLabel,
-      cancelLabel: cancelLabel,
-      onAction: onAction,
-      onCancel: onCancel,
-      actionColor: Colors.red,
-      icon: Icons.warning_rounded,
-      iconColor: Colors.red,
-    );
-  }
-}
-
-/// AlertDialog de succès
-class SuccessDialog extends StatelessWidget {
-  final String title;
-  final String description;
-  final String actionLabel;
-
-  const SuccessDialog({
-    Key? key,
-    required this.title,
-    required this.description,
-    this.actionLabel = 'OK',
-  }) : super(key: key);
-
-  static Future<bool?> show({
-    required BuildContext context,
-    required String title,
-    required String description,
-    String actionLabel = 'OK',
-  }) {
-    return CustomAlertDialog.show(
-      context: context,
-      title: title,
-      description: description,
-      actionLabel: actionLabel,
-      actionColor: Colors.green,
-      icon: Icons.check_circle_rounded,
-      iconColor: Colors.green,
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomAlertDialog(
-      title: title,
-      description: description,
-      actionLabel: actionLabel,
-      actionColor: Colors.green,
-      icon: Icons.check_circle_rounded,
-      iconColor: Colors.green,
-    );
-  }
-}
+enum AlertType { success, warning, error, info }
 
 /// Exemple d'utilisation complète
 class AlertDialogExample extends StatelessWidget {
@@ -392,11 +189,14 @@ class AlertDialogExample extends StatelessWidget {
           // Dialog simple
           ElevatedButton(
             onPressed: () {
-              CustomAlertDialog.show(
+              showDialog(
                 context: context,
-                title: 'Notification',
-                description: 'Ceci est un message d\'information important.',
-                actionLabel: 'Compris',
+                builder: (context) => const CustomAlertDialog(
+                  title: 'Notification',
+                  message: 'Ceci est un message d\'information important.',
+                  confirmText: 'Compris',
+                  type: AlertType.info,
+                ),
               );
             },
             child: const Text('Dialog Simple'),
@@ -406,13 +206,18 @@ class AlertDialogExample extends StatelessWidget {
           // Dialog de confirmation
           ElevatedButton(
             onPressed: () async {
-              final result = await ConfirmationDialog.show(
+              final result = await showDialog<bool>(
                 context: context,
-                title: 'Confirmer l\'action',
-                description: 'Êtes-vous sûr de vouloir continuer ?',
-                confirmLabel: 'Oui, continuer',
-                cancelLabel: 'Non, annuler',
-                icon: Icons.help_outline,
+                builder: (context) => CustomAlertDialog(
+                  title: 'Confirmer l\'action',
+                  message: 'Êtes-vous sûr de vouloir continuer ?',
+                  icon: Icons.help_outline,
+                  confirmText: 'Oui, continuer',
+                  cancelText: 'Non, annuler',
+                  onConfirm: () => Navigator.of(context).pop(true),
+                  onCancel: () => Navigator.of(context).pop(false),
+                  type: AlertType.info,
+                ),
               );
 
               if (result == true && context.mounted) {
@@ -428,13 +233,19 @@ class AlertDialogExample extends StatelessWidget {
           // Dialog destructif
           ElevatedButton(
             onPressed: () async {
-              final result = await DestructiveDialog.show(
+              final result = await showDialog<bool>(
                 context: context,
-                title: 'Supprimer l\'élément',
-                description:
-                    'Cette action est irréversible. Êtes-vous sûr de vouloir supprimer cet élément ?',
-                actionLabel: 'Oui, supprimer',
-                cancelLabel: 'Annuler',
+                builder: (context) => CustomAlertDialog(
+                  title: 'Supprimer l\'élément',
+                  message:
+                      'Cette action est irréversible. Êtes-vous sûr de vouloir supprimer cet élément ?',
+                  icon: Icons.delete_outline,
+                  confirmText: 'Oui, supprimer',
+                  cancelText: 'Annuler',
+                  onConfirm: () => Navigator.of(context).pop(true),
+                  onCancel: () => Navigator.of(context).pop(false),
+                  type: AlertType.error,
+                ),
               );
 
               if (result == true && context.mounted) {
@@ -457,11 +268,15 @@ class AlertDialogExample extends StatelessWidget {
           // Dialog de succès
           ElevatedButton(
             onPressed: () {
-              SuccessDialog.show(
+              showDialog(
                 context: context,
-                title: 'Succès !',
-                description: 'Votre opération a été effectuée avec succès.',
-                actionLabel: 'Super !',
+                builder: (context) => CustomAlertDialog(
+                  title: 'Succès !',
+                  message: 'Votre opération a été effectuée avec succès.',
+                  confirmText: 'Super !',
+                  type: AlertType.success,
+                  onConfirm: () => Navigator.of(context).pop(),
+                ),
               );
             },
             style: ElevatedButton.styleFrom(
@@ -475,52 +290,61 @@ class AlertDialogExample extends StatelessWidget {
           // Dialog personnalisé
           ElevatedButton(
             onPressed: () {
-              CustomAlertDialog.show(
+              showDialog(
                 context: context,
-                titleWidget: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.star, color: Colors.amber),
-                    SizedBox(width: 8),
-                    Text(
-                      'Titre personnalisé',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
+                builder: (context) => Dialog(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.star, color: Colors.amber),
+                            SizedBox(width: 8),
+                            Text(
+                              'Titre personnalisé',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        const Text('Description avec widgets personnalisés'),
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Text('Information complémentaire'),
+                        ),
+                        const SizedBox(height: 12),
+                        ElevatedButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('Action 1'),
+                        ),
+                        const SizedBox(height: 8),
+                        OutlinedButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('Action 2'),
+                        ),
+                        const SizedBox(height: 8),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('Annuler'),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-                descriptionWidget: Column(
-                  children: [
-                    const Text('Description avec widgets personnalisés'),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Text('Information complémentaire'),
-                    ),
-                  ],
-                ),
-                actions: [
-                  ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Action 1'),
-                  ),
-                  const SizedBox(height: 8),
-                  OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Action 2'),
-                  ),
-                  const SizedBox(height: 8),
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Annuler'),
-                  ),
-                ],
               );
             },
             child: const Text('Dialog Personnalisé'),
