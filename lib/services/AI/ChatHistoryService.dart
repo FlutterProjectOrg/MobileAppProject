@@ -145,6 +145,11 @@ class ChatHistoryService {
           enrichedConversation['last_message'] = messages.isNotEmpty ? messages.first['message'] : null;
           enrichedConversation['last_message_time'] = messages.isNotEmpty ? messages.first['created_at'] : null;
           
+          // Ensure required fields exist with default values
+          enrichedConversation['id'] ??= conversationId;
+          enrichedConversation['title'] ??= 'Conversation sans titre';
+          enrichedConversation['updated_at'] ??= enrichedConversation['created_at'] ?? DateTime.now().toIso8601String();
+          
           enrichedConversations.add(enrichedConversation);
           debugPrint('📋   - Conversation $i enriched successfully');
         } catch (e) {
