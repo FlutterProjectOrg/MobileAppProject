@@ -48,32 +48,36 @@ class _AIChatbotState extends State<AIChatbot>
   void initState() {
     super.initState();
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 200), // Faster animation
+      duration: const Duration(milliseconds: 150), // Even faster animation
       vsync: this,
     );
     _scaleAnimation = CurvedAnimation(
       parent: _animationController,
-      curve: Curves.easeOutBack,
+      curve: Curves.easeOut, // Simpler curve for faster performance
     );
     _animationController.forward();
     
-    // Show UI immediately, initialize in background
-    _initializeGeminiQuick();
+    // Defer ALL initialization to next frame for instant UI response
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeGeminiQuick();
+    });
   }
 
   /// Quick initialization - defers heavy operations
   Future<void> _initializeGeminiQuick() async {
-    // Show welcome message immediately
-    setState(() {
-      _messages.add(
-        Message(
-          id: 1,
-          text: "Bonjour! Je suis votre assistant culinaire IA. Initialisation en cours...",
-          sender: 'ai',
-        ),
-      );
-      _isLoading = true;
-    });
+    // Show welcome message immediately (now on next frame)
+    if (mounted) {
+      setState(() {
+        _messages.add(
+          Message(
+            id: 1,
+            text: "Bonjour! Je suis votre assistant culinaire IA. Initialisation en cours...",
+            sender: 'ai',
+          ),
+        );
+        _isLoading = true;
+      });
+    }
 
     // Initialize in background without blocking UI
     Future.microtask(() async {
@@ -366,6 +370,32 @@ class _AIChatbotState extends State<AIChatbot>
 
   @override
   Widget build(BuildContext context) {
+    // Ultra-fast initial render - simple container only
+    if (_messages.isEmpty && !_isLoading && _errorMessage == null) {
+      return GestureDetector(
+        onTap: widget.onClose,
+        child: Container(
+          color: Colors.black.withOpacity(0.6),
+          child: Center(
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
+              constraints: const BoxConstraints(maxWidth: 500, maxHeight: 600),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: const Center(
+                child: CircularProgressIndicator(
+                  color: AppColors.primaryOrange,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Full UI with animation after first setState
     return GestureDetector(
       onTap: widget.onClose,
       child: Container(
@@ -546,24 +576,64 @@ class _AIChatbotState extends State<AIChatbot>
             }
 
             if (snapshot.hasError) {
+              debugPrint('❌ Error loading chat history: ${snapshot.error}');
               return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.error_outline,
-                      size: 64,
-                      color: Colors.grey,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Erreur lors du chargement',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey[600],
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        size: 64,
+                        color: Colors.grey,
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 16),
+                      Text(
+                        'Erreur lors du chargement',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '${snapshot.error}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[500],
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          setState(() {
+                            _showHistory = false;
+                          });
+                          Future.delayed(const Duration(milliseconds: 100), () {
+                            setState(() {
+                              _showHistory = true;
+                            });
+                          });
+                        },
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Réessayer'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryOrange,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 12,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               );
             }

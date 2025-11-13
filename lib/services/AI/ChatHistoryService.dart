@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:mobile_app_project/database/LocalDb.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -60,50 +61,61 @@ class ChatHistoryService {
 
   /// Get all conversations for current user (or all if no user)
   Future<List<Map<String, dynamic>>> getConversations({int? userId}) async {
-    final db = LocalDb.instance.db;
-    
-    // If no userId provided, try to get from SharedPreferences
-    userId ??= await _getCurrentUserId();
-    
-    List<Map<String, dynamic>> conversations;
-    
-    if (userId != null) {
-      conversations = await db.query(
-        'chat_conversations',
-        where: 'user_id = ?',
-        whereArgs: [userId],
-        orderBy: 'updated_at DESC',
-      );
-    } else {
-      // Get all conversations if no user
-      conversations = await db.query(
-        'chat_conversations',
-        orderBy: 'updated_at DESC',
-      );
-    }
-    
-    // For each conversation, get the message count and last message
-    for (var conversation in conversations) {
-      final messages = await db.query(
-        'chat_messages',
-        where: 'conversation_id = ?',
-        whereArgs: [conversation['id']],
-        orderBy: 'created_at DESC',
-        limit: 1,
-      );
+    try {
+      final db = LocalDb.instance.db;
       
-      final count = await db.query(
-        'chat_messages',
-        where: 'conversation_id = ?',
-        whereArgs: [conversation['id']],
-      );
+      // If no userId provided, try to get from SharedPreferences
+      userId ??= await _getCurrentUserId();
       
-      conversation['message_count'] = count.length;
-      conversation['last_message'] = messages.isNotEmpty ? messages.first['message'] : null;
-      conversation['last_message_time'] = messages.isNotEmpty ? messages.first['created_at'] : null;
+      List<Map<String, dynamic>> conversations;
+      
+      if (userId != null) {
+        conversations = await db.query(
+          'chat_conversations',
+          where: 'user_id = ?',
+          whereArgs: [userId],
+          orderBy: 'updated_at DESC',
+        );
+      } else {
+        // Get all conversations if no user
+        conversations = await db.query(
+          'chat_conversations',
+          orderBy: 'updated_at DESC',
+        );
+      }
+      
+      // For each conversation, get the message count and last message
+      final enrichedConversations = <Map<String, dynamic>>[];
+      
+      for (var conversation in conversations) {
+        final messages = await db.query(
+          'chat_messages',
+          where: 'conversation_id = ?',
+          whereArgs: [conversation['id']],
+          orderBy: 'created_at DESC',
+          limit: 1,
+        );
+        
+        final count = await db.query(
+          'chat_messages',
+          where: 'conversation_id = ?',
+          whereArgs: [conversation['id']],
+        );
+        
+        // Create a mutable copy of the conversation map
+        final enrichedConversation = Map<String, dynamic>.from(conversation);
+        enrichedConversation['message_count'] = count.length;
+        enrichedConversation['last_message'] = messages.isNotEmpty ? messages.first['message'] : null;
+        enrichedConversation['last_message_time'] = messages.isNotEmpty ? messages.first['created_at'] : null;
+        
+        enrichedConversations.add(enrichedConversation);
+      }
+      
+      return enrichedConversations;
+    } catch (e) {
+      debugPrint('❌ Error in getConversations: $e');
+      rethrow;
     }
-    
-    return conversations;
   }
 
   /// Get messages for a specific conversation
