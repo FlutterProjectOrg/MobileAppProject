@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:mobile_app_project/Pages/UI/AppColors.dart';
+import 'package:mobile_app_project/services/AI/GeminiService.dart';
 
 class Message {
   final int id;
@@ -30,21 +32,12 @@ class _AIChatbotState extends State<AIChatbot>
   final ScrollController _scrollController = ScrollController();
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
+  final GeminiService _geminiService = GeminiService.instance;
 
-  final List<Message> _messages = [
-    Message(
-      id: 1,
-      text:
-          "Bonjour! Je suis votre assistant culinaire IA. Comment puis-je vous aider à trouver le restaurant parfait aujourd'hui?",
-      sender: 'ai',
-      suggestions: [
-        'Restaurant italien près de moi',
-        'Meilleur sushi à Paris',
-        'Restaurant romantique',
-        'Brunch du dimanche',
-      ],
-    ),
-  ];
+  final List<Message> _messages = [];
+  bool _isLoading = false;
+  bool _isInitialized = false;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -58,6 +51,62 @@ class _AIChatbotState extends State<AIChatbot>
       curve: Curves.easeOutBack,
     );
     _animationController.forward();
+    _initializeGemini();
+  }
+
+  Future<void> _initializeGemini() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Get API key from .env
+      final apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
+      
+      if (apiKey.isEmpty) {
+        setState(() {
+          _errorMessage = 'La clé API Gemini n\'est pas configurée. Veuillez ajouter GEMINI_API_KEY dans le fichier .env';
+          _isLoading = false;
+          _isInitialized = false;
+        });
+        return;
+      }
+
+      // Initialize Gemini service
+      final success = await _geminiService.initialize(apiKey);
+
+      if (success) {
+        // Start new chat with database context
+        await _geminiService.startNewChat();
+
+        // Add welcome message
+        setState(() {
+          _messages.add(
+            Message(
+              id: 1,
+              text: "Bonjour! Je suis votre assistant culinaire IA. Je connais tous les restaurants de notre base de données FoodFinder. Comment puis-je vous aider à trouver le restaurant parfait aujourd'hui?",
+              sender: 'ai',
+              suggestions: _geminiService.getSuggestedQuestions(),
+            ),
+          );
+          _isInitialized = true;
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _errorMessage = 'Impossible d\'initialiser le service Gemini. Vérifiez votre clé API.';
+          _isLoading = false;
+          _isInitialized = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error initializing Gemini: $e');
+      setState(() {
+        _errorMessage = 'Erreur: ${e.toString()}';
+        _isLoading = false;
+        _isInitialized = false;
+      });
+    }
   }
 
   @override
@@ -68,35 +117,74 @@ class _AIChatbotState extends State<AIChatbot>
     super.dispose();
   }
 
-  void _handleSend([String? text]) {
+  Future<void> _handleSend([String? text]) async {
     final messageText = text ?? _textController.text;
     if (messageText.trim().isEmpty) return;
 
+    if (!_isInitialized) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('L\'assistant IA n\'est pas encore initialisé'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Add user message
     setState(() {
-      // Ajouter le message utilisateur
       _messages.add(
         Message(id: _messages.length + 1, text: messageText, sender: 'user'),
       );
-
-      // Mock réponse IA
-      _messages.add(
-        Message(
-          id: _messages.length + 2,
-          text:
-              'Je vous recommande de visiter "La Bella Italia" - un restaurant italien authentique situé à seulement 1.2 km de votre position. Il a une note de 4.7⭐ et est ouvert jusqu\'à 23h. Voulez-vous voir plus de détails ou réserver une table?',
-          sender: 'ai',
-          suggestions: [
-            'Voir les détails',
-            'Réserver maintenant',
-            'Autres options',
-          ],
-        ),
-      );
+      _isLoading = true;
     });
 
     _textController.clear();
 
-    // Scroller vers le bas
+    // Scroll to bottom after user message
+    _scrollToBottom();
+
+    try {
+      // Get AI response
+      final response = await _geminiService.sendMessage(messageText);
+
+      // Add AI response
+      setState(() {
+        _messages.add(
+          Message(
+            id: _messages.length + 1,
+            text: response,
+            sender: 'ai',
+            suggestions: _shouldShowSuggestions() ? _geminiService.getSuggestedQuestions() : null,
+          ),
+        );
+        _isLoading = false;
+      });
+
+      // Scroll to bottom after AI response
+      _scrollToBottom();
+    } catch (e) {
+      debugPrint('Error getting AI response: $e');
+      setState(() {
+        _messages.add(
+          Message(
+            id: _messages.length + 1,
+            text: 'Désolé, une erreur s\'est produite. Veuillez réessayer.',
+            sender: 'ai',
+          ),
+        );
+        _isLoading = false;
+      });
+      _scrollToBottom();
+    }
+  }
+
+  bool _shouldShowSuggestions() {
+    // Show suggestions every 3 messages or for first message
+    return _messages.length <= 2 || _messages.length % 3 == 0;
+  }
+
+  void _scrollToBottom() {
     Future.delayed(const Duration(milliseconds: 100), () {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
@@ -253,14 +341,132 @@ class _AIChatbotState extends State<AIChatbot>
             colors: [AppColors.background, Colors.white],
           ),
         ),
-        child: ListView.builder(
-          controller: _scrollController,
-          padding: const EdgeInsets.all(20),
-          itemCount: _messages.length,
-          itemBuilder: (context, index) {
-            return _buildMessageItem(_messages[index]);
-          },
+        child: _errorMessage != null
+            ? _buildErrorState()
+            : ListView.builder(
+                controller: _scrollController,
+                padding: const EdgeInsets.all(20),
+                itemCount: _messages.length + (_isLoading ? 1 : 0),
+                itemBuilder: (context, index) {
+                  if (index == _messages.length && _isLoading) {
+                    return _buildLoadingIndicator();
+                  }
+                  return _buildMessageItem(_messages[index]);
+                },
+              ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.error_outline,
+                size: 48,
+                color: Colors.red,
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Erreur d\'initialisation',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              _errorMessage ?? 'Une erreur est survenue',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 14,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () {
+                setState(() {
+                  _errorMessage = null;
+                });
+                _initializeGemini();
+              },
+              icon: const Icon(Icons.refresh),
+              label: const Text('Réessayer'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryOrange,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+            ),
+          ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingIndicator() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          Flexible(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border.all(
+                  color: AppColors.primaryOrange.withOpacity(0.2),
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        AppColors.primaryOrange,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'L\'assistant réfléchit...',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 14,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
