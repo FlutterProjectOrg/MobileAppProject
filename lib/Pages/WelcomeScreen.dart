@@ -101,6 +101,13 @@ class _WelcomeScreenState extends State<WelcomeScreen>
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    // Responsive breakpoints
+    final isSmallScreen = screenWidth < 360;
+    final isTablet = screenWidth >= 600;
+    final isExtraLarge = screenWidth >= 900;
+
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -117,33 +124,56 @@ class _WelcomeScreenState extends State<WelcomeScreen>
         child: SafeArea(
           child: LayoutBuilder(
             builder: (context, constraints) {
-              return SingleChildScrollView(
+              return Center(
                 child: ConstrainedBox(
-                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 20,
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        // Header with logo
-                        _buildHeader(),
-
-                        // Features grid
-                        _buildFeaturesGrid(),
-
-                        // CTA Button + Terms
-                        Column(
+                  // Max width for very large screens
+                  constraints: BoxConstraints(
+                    maxWidth: isExtraLarge ? 1200 : double.infinity,
+                  ),
+                  child: SingleChildScrollView(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: constraints.maxHeight,
+                      ),
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isSmallScreen ? 16 : (isTablet ? 48 : 24),
+                          vertical: isSmallScreen ? 16 : 20,
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            _buildCTAButton(),
-                            const SizedBox(height: 12),
-                            _buildTermsText(),
-                            const SizedBox(height: 8),
+                            // Header with logo
+                            _buildHeader(
+                              isSmallScreen: isSmallScreen,
+                              isTablet: isTablet,
+                            ),
+
+                            SizedBox(
+                              height: isSmallScreen ? 24 : (isTablet ? 40 : 32),
+                            ),
+
+                            // Features grid
+                            _buildFeaturesGrid(
+                              isSmallScreen: isSmallScreen,
+                              isTablet: isTablet,
+                              isExtraLarge: isExtraLarge,
+                              screenWidth: screenWidth,
+                            ),
+
+                            SizedBox(
+                              height: isSmallScreen ? 24 : (isTablet ? 40 : 32),
+                            ),
+
+                            // CTA Button + Terms
+                            _buildBottomSection(
+                              isSmallScreen: isSmallScreen,
+                              isTablet: isTablet,
+                              screenWidth: screenWidth,
+                            ),
                           ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
@@ -155,7 +185,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader({required bool isSmallScreen, required bool isTablet}) {
     return Column(
       children: [
         // Logo
@@ -164,11 +194,11 @@ class _WelcomeScreenState extends State<WelcomeScreen>
           child: ScaleTransition(
             scale: _logoScaleAnimation,
             child: Container(
-              width: 70,
-              height: 70,
+              width: isSmallScreen ? 60 : (isTablet ? 90 : 70),
+              height: isSmallScreen ? 60 : (isTablet ? 90 : 70),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(isTablet ? 22 : 18),
                 boxShadow: [
                   BoxShadow(
                     color: AppColors.primaryOrange.withOpacity(0.3),
@@ -177,26 +207,26 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                   ),
                 ],
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.restaurant_menu,
-                size: 36,
+                size: isSmallScreen ? 30 : (isTablet ? 44 : 36),
                 color: AppColors.primaryOrange,
               ),
             ),
           ),
         ),
 
-        const SizedBox(height: 20),
+        SizedBox(height: isSmallScreen ? 16 : (isTablet ? 28 : 20)),
 
         // Title and subtitle
         FadeTransition(
           opacity: _titleFadeAnimation,
           child: Column(
             children: [
-              const Text(
+              Text(
                 'Bienvenue sur',
                 style: TextStyle(
-                  fontSize: 28,
+                  fontSize: isSmallScreen ? 22 : (isTablet ? 36 : 28),
                   fontWeight: FontWeight.w300,
                   color: AppColors.textPrimary,
                 ),
@@ -204,24 +234,27 @@ class _WelcomeScreenState extends State<WelcomeScreen>
               ShaderMask(
                 shaderCallback: (bounds) =>
                     AppColors.gradientPrimary.createShader(bounds),
-                child: const Text(
+                child: Text(
                   'FoodFinder',
                   style: TextStyle(
-                    fontSize: 32,
+                    fontSize: isSmallScreen ? 26 : (isTablet ? 42 : 32),
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                     letterSpacing: -0.5,
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
-              const Text(
-                'Découvrez et réservez les meilleurs restaurants\nde votre ville en quelques clics',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: AppColors.textSecondary,
-                  height: 1.4,
+              SizedBox(height: isSmallScreen ? 8 : (isTablet ? 16 : 12)),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: isTablet ? 40 : 0),
+                child: Text(
+                  'Découvrez et réservez les meilleurs restaurants\nde votre ville en quelques clics',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: isSmallScreen ? 12 : (isTablet ? 16 : 13),
+                    color: AppColors.textSecondary,
+                    height: 1.4,
+                  ),
                 ),
               ),
             ],
@@ -231,18 +264,44 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     );
   }
 
-  Widget _buildFeaturesGrid() {
+  Widget _buildFeaturesGrid({
+    required bool isSmallScreen,
+    required bool isTablet,
+    required bool isExtraLarge,
+    required double screenWidth,
+  }) {
+    // Determine grid columns based on screen size
+    int crossAxisCount = 2; // Default
+    if (isExtraLarge) {
+      crossAxisCount = 4;
+    } else if (isTablet) {
+      crossAxisCount = 3;
+    } else if (isSmallScreen) {
+      crossAxisCount = 2;
+    }
+
+    // Adjust spacing
+    final spacing = isSmallScreen ? 10.0 : (isTablet ? 16.0 : 12.0);
+
+    // Adjust aspect ratio
+    double aspectRatio = 0.95;
+    if (isTablet) {
+      aspectRatio = 1.0;
+    } else if (isSmallScreen) {
+      aspectRatio = 0.9;
+    }
+
     return AnimatedBuilder(
       animation: _featuresController,
       builder: (context, child) {
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            childAspectRatio: 0.95,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            crossAxisSpacing: spacing,
+            mainAxisSpacing: spacing,
+            childAspectRatio: aspectRatio,
           ),
           itemCount: _features.length,
           itemBuilder: (context, index) {
@@ -257,7 +316,11 @@ class _WelcomeScreenState extends State<WelcomeScreen>
               scale: animValue,
               child: Opacity(
                 opacity: animValue,
-                child: _FeatureCard(feature: _features[index]),
+                child: _FeatureCard(
+                  feature: _features[index],
+                  isSmallScreen: isSmallScreen,
+                  isTablet: isTablet,
+                ),
               ),
             );
           },
@@ -266,7 +329,35 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     );
   }
 
-  Widget _buildCTAButton() {
+  Widget _buildBottomSection({
+    required bool isSmallScreen,
+    required bool isTablet,
+    required double screenWidth,
+  }) {
+    return Column(
+      children: [
+        _buildCTAButton(
+          isSmallScreen: isSmallScreen,
+          isTablet: isTablet,
+          screenWidth: screenWidth,
+        ),
+        SizedBox(height: isSmallScreen ? 10 : 12),
+        _buildTermsText(isSmallScreen: isSmallScreen, isTablet: isTablet),
+        SizedBox(height: isSmallScreen ? 8 : 8),
+      ],
+    );
+  }
+
+  Widget _buildCTAButton({
+    required bool isSmallScreen,
+    required bool isTablet,
+    required double screenWidth,
+  }) {
+    // Limit button width on large screens
+    final buttonWidth = isTablet
+        ? (screenWidth > 900 ? 400.0 : double.infinity)
+        : double.infinity;
+
     return FadeTransition(
       opacity: _buttonController,
       child: SlideTransition(
@@ -274,47 +365,53 @@ class _WelcomeScreenState extends State<WelcomeScreen>
             .animate(
               CurvedAnimation(parent: _buttonController, curve: Curves.easeOut),
             ),
-        child: SizedBox(
-          width: double.infinity,
-          height: 52,
-          child: ElevatedButton(
-            onPressed: widget.onGetStarted,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.transparent,
-              shadowColor: Colors.transparent,
-              padding: EdgeInsets.zero,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+        child: Center(
+          child: SizedBox(
+            width: buttonWidth,
+            height: isSmallScreen ? 48 : (isTablet ? 58 : 52),
+            child: ElevatedButton(
+              onPressed: widget.onGetStarted,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                shadowColor: Colors.transparent,
+                padding: EdgeInsets.zero,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(isTablet ? 18 : 16),
+                ),
               ),
-            ),
-            child: Ink(
-              decoration: BoxDecoration(
-                gradient: AppColors.gradientPrimary,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primaryOrange.withOpacity(0.4),
-                    blurRadius: 15,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
-              ),
-              child: Container(
-                alignment: Alignment.center,
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Commencer',
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
+              child: Ink(
+                decoration: BoxDecoration(
+                  gradient: AppColors.gradientPrimary,
+                  borderRadius: BorderRadius.circular(isTablet ? 18 : 16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primaryOrange.withOpacity(0.4),
+                      blurRadius: 15,
+                      offset: const Offset(0, 5),
                     ),
-                    SizedBox(width: 8),
-                    Icon(Icons.arrow_forward, color: Colors.white, size: 20),
                   ],
+                ),
+                child: Container(
+                  alignment: Alignment.center,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Commencer',
+                        style: TextStyle(
+                          fontSize: isSmallScreen ? 15 : (isTablet ? 19 : 17),
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                      SizedBox(width: isTablet ? 10 : 8),
+                      Icon(
+                        Icons.arrow_forward,
+                        color: Colors.white,
+                        size: isSmallScreen ? 18 : (isTablet ? 22 : 20),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -324,15 +421,21 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     );
   }
 
-  Widget _buildTermsText() {
+  Widget _buildTermsText({
+    required bool isSmallScreen,
+    required bool isTablet,
+  }) {
     return FadeTransition(
       opacity: _buttonController,
-      child: Text(
-        'En continuant, vous acceptez nos conditions d\'utilisation',
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          fontSize: 10,
-          color: AppColors.textSecondary.withOpacity(0.7),
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: isTablet ? 40 : 0),
+        child: Text(
+          'En continuant, vous acceptez nos conditions d\'utilisation',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: isSmallScreen ? 9 : (isTablet ? 12 : 10),
+            color: AppColors.textSecondary.withOpacity(0.7),
+          ),
         ),
       ),
     );
@@ -341,16 +444,22 @@ class _WelcomeScreenState extends State<WelcomeScreen>
 
 class _FeatureCard extends StatelessWidget {
   final FeatureItem feature;
+  final bool isSmallScreen;
+  final bool isTablet;
 
-  const _FeatureCard({required this.feature});
+  const _FeatureCard({
+    required this.feature,
+    required this.isSmallScreen,
+    required this.isTablet,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: EdgeInsets.all(isSmallScreen ? 10 : (isTablet ? 16 : 12)),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.7),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(isTablet ? 20 : 18),
         border: Border.all(
           color: AppColors.primaryOrange.withOpacity(0.1),
           width: 1,
@@ -367,34 +476,38 @@ class _FeatureCard extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 44,
-            height: 44,
+            width: isSmallScreen ? 40 : (isTablet ? 52 : 44),
+            height: isSmallScreen ? 40 : (isTablet ? 52 : 44),
             decoration: BoxDecoration(
               gradient: AppColors.gradientPrimary.scale(0.2),
-              borderRadius: BorderRadius.circular(11),
+              borderRadius: BorderRadius.circular(isTablet ? 13 : 11),
             ),
-            child: Icon(feature.icon, color: AppColors.primaryOrange, size: 22),
+            child: Icon(
+              feature.icon,
+              color: AppColors.primaryOrange,
+              size: isSmallScreen ? 20 : (isTablet ? 26 : 22),
+            ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: isSmallScreen ? 6 : (isTablet ? 10 : 8)),
           Text(
             feature.title,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 13,
+            style: TextStyle(
+              fontSize: isSmallScreen ? 11 : (isTablet ? 15 : 13),
               fontWeight: FontWeight.w600,
               color: AppColors.textPrimary,
             ),
           ),
-          const SizedBox(height: 6),
+          SizedBox(height: isSmallScreen ? 4 : (isTablet ? 8 : 6)),
           Text(
             feature.description,
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 10,
+            style: TextStyle(
+              fontSize: isSmallScreen ? 9 : (isTablet ? 13 : 10),
               color: AppColors.textSecondary,
               height: 1.3,
             ),
