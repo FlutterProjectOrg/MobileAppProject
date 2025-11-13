@@ -278,6 +278,7 @@ class _AIChatbotState extends State<AIChatbot>
 
   /// Load a previous conversation
   Future<void> _loadConversation(int conversationId) async {
+    debugPrint('📂 Loading conversation $conversationId');
     setState(() {
       _isLoading = true;
       _showHistory = false;
@@ -285,12 +286,16 @@ class _AIChatbotState extends State<AIChatbot>
 
     try {
       // Get messages from database
+      debugPrint('📂 Fetching messages for conversation $conversationId');
       final messagesData = await _chatHistory.getMessages(conversationId);
+      debugPrint('📂 Retrieved ${messagesData.length} messages');
       
       // Start new Gemini chat
+      debugPrint('📂 Starting new Gemini chat session');
       await _geminiService.startNewChat();
       
       // Convert to Message objects
+      debugPrint('📂 Converting messages to Message objects');
       final messages = messagesData.map((data) {
         return Message(
           id: data['id'] as int,
@@ -305,10 +310,12 @@ class _AIChatbotState extends State<AIChatbot>
         _messages.addAll(messages);
         _isLoading = false;
       });
-
+      
+      debugPrint('✅ Conversation $conversationId loaded successfully');
       _scrollToBottom();
-    } catch (e) {
-      debugPrint('Error loading conversation: $e');
+    } catch (e, stackTrace) {
+      debugPrint('❌ Error loading conversation: $e');
+      debugPrint('❌ Stack trace: $stackTrace');
       setState(() {
         _isLoading = false;
       });
@@ -528,7 +535,11 @@ class _AIChatbotState extends State<AIChatbot>
           const SizedBox(width: 8),
           // History button
           GestureDetector(
-            onTap: () => setState(() => _showHistory = !_showHistory),
+            onTap: () {
+              debugPrint('🔘 History button tapped. Current state: $_showHistory');
+              setState(() => _showHistory = !_showHistory);
+              debugPrint('🔘 History state changed to: $_showHistory');
+            },
             child: Container(
               width: 40,
               height: 40,
@@ -561,13 +572,17 @@ class _AIChatbotState extends State<AIChatbot>
   }
 
   Widget _buildHistoryPanel() {
+    debugPrint('🎨 _buildHistoryPanel: Building history panel');
     return Expanded(
       child: Container(
         color: AppColors.background,
         child: FutureBuilder<List<Map<String, dynamic>>>(
           future: _chatHistory.getConversations(),
           builder: (context, snapshot) {
+            debugPrint('🎨 FutureBuilder state: ${snapshot.connectionState}');
+            
             if (snapshot.connectionState == ConnectionState.waiting) {
+              debugPrint('🎨 Showing loading indicator');
               return const Center(
                 child: CircularProgressIndicator(
                   color: AppColors.primaryOrange,
@@ -577,6 +592,7 @@ class _AIChatbotState extends State<AIChatbot>
 
             if (snapshot.hasError) {
               debugPrint('❌ Error loading chat history: ${snapshot.error}');
+              debugPrint('❌ Error type: ${snapshot.error.runtimeType}');
               return Center(
                 child: Padding(
                   padding: const EdgeInsets.all(24.0),
@@ -639,8 +655,10 @@ class _AIChatbotState extends State<AIChatbot>
             }
 
             final conversations = snapshot.data ?? [];
+            debugPrint('✅ Loaded ${conversations.length} conversations successfully');
 
             if (conversations.isEmpty) {
+              debugPrint('📭 No conversations found - showing empty state');
               return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
