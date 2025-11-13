@@ -89,7 +89,9 @@ class _AddRestaurantModalState extends State<AddRestaurantModal> {
   @override
   void initState() {
     super.initState();
+    debugPrint('🏪 AddRestaurantModal initState - Edit mode: ${widget.restaurantToEdit != null}');
     if (widget.restaurantToEdit != null) {
+      debugPrint('📝 Pre-populating form with restaurant data');
       _prePopulateForm();
     }
   }

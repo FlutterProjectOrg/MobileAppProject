@@ -54,7 +54,9 @@ class _AddDishModalState extends State<AddDishModal> {
   @override
   void initState() {
     super.initState();
+    debugPrint('🍽️ AddDishModal initState - Edit mode: ${widget.dishToEdit != null}');
     if (widget.dishToEdit != null) {
+      debugPrint('📝 Pre-populating form with dish data');
       _prePopulateForm();
     }
   }

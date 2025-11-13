@@ -394,34 +394,75 @@ class _RestaurantDetailOwnerState extends State<RestaurantDetailOwner> {
         IconButton(
           icon: const Icon(Icons.edit, color: Colors.white),
           onPressed: () async {
-            if (_restaurant == null) return;
+            debugPrint('✏️ Edit restaurant button pressed');
             
-            // Fetch the full restaurant data including owner_id
-            final restaurantData = await RestaurantService.instance.getRestaurant(widget.restaurantId);
-            if (restaurantData == null || !mounted) return;
+            if (_restaurant == null) {
+              debugPrint('❌ Restaurant is null, cannot edit');
+              return;
+            }
             
-            showModalBottomSheet(
-              context: context,
-              isScrollControlled: true,
-              backgroundColor: Colors.transparent,
-              builder: (context) => Padding(
-                padding: EdgeInsets.only(
-                  bottom: MediaQuery.of(context).viewInsets.bottom,
-                ),
-                child: DraggableScrollableSheet(
-                  initialChildSize: 0.95,
-                  minChildSize: 0.5,
-                  maxChildSize: 0.95,
-                  builder: (_, controller) => AddRestaurantModal(
-                    ownerId: restaurantData['owner_id'] as int,
-                    restaurantToEdit: restaurantData,
-                    onRestaurantAdded: () {
-                      _loadRestaurantDetails();
-                    },
+            debugPrint('📥 Fetching restaurant data for ID: ${widget.restaurantId}');
+            
+            try {
+              // Fetch the full restaurant data including owner_id
+              final restaurantData = await RestaurantService.instance.getRestaurant(widget.restaurantId);
+              
+              if (restaurantData == null) {
+                debugPrint('❌ Restaurant data is null');
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Erreur: Impossible de charger les données du restaurant'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+                return;
+              }
+              
+              if (!mounted) {
+                debugPrint('❌ Widget not mounted');
+                return;
+              }
+              
+              debugPrint('✅ Restaurant data loaded: ${restaurantData['name']}');
+              debugPrint('👤 Owner ID: ${restaurantData['owner_id']}');
+              
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (context) => Padding(
+                  padding: EdgeInsets.only(
+                    bottom: MediaQuery.of(context).viewInsets.bottom,
+                  ),
+                  child: DraggableScrollableSheet(
+                    initialChildSize: 0.95,
+                    minChildSize: 0.5,
+                    maxChildSize: 0.95,
+                    builder: (_, controller) => AddRestaurantModal(
+                      ownerId: restaurantData['owner_id'] as int,
+                      restaurantToEdit: restaurantData,
+                      onRestaurantAdded: () {
+                        _loadRestaurantDetails();
+                      },
+                    ),
                   ),
                 ),
-              ),
-            );
+              );
+              debugPrint('🎉 Modal opened successfully');
+            } catch (e, stackTrace) {
+              debugPrint('❌ Error opening edit modal: $e');
+              debugPrint('❌ Stack trace: $stackTrace');
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Erreur: ${e.toString()}'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            }
           },
         ),
       ],
@@ -1218,41 +1259,62 @@ class _RestaurantDetailOwnerState extends State<RestaurantDetailOwner> {
           PopupMenuButton<String>(
             icon: Icon(Icons.more_vert, color: Colors.grey[600]),
             onSelected: (value) async {
+              debugPrint('🍽️ Dish menu item selected: $value for dish: ${dish.name}');
+              
               if (value == 'edit') {
-                // Convert Dish object to Map for the modal
-                final dishMap = {
-                  'id': dish.id,
-                  'name': dish.name,
-                  'category': dish.category,
-                  'price': dish.price,
-                  'preparation_time': dish.preparationTime,
-                  'pictures': dish.pictures,
-                  'restaurant_id': widget.restaurantId,
-                };
+                debugPrint('✏️ Editing dish ID: ${dish.id}');
                 
-                showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  backgroundColor: Colors.transparent,
-                  builder: (context) => Padding(
-                    padding: EdgeInsets.only(
-                      bottom: MediaQuery.of(context).viewInsets.bottom,
-                    ),
-                    child: DraggableScrollableSheet(
-                      initialChildSize: 0.95,
-                      minChildSize: 0.5,
-                      maxChildSize: 0.95,
-                      builder: (_, controller) => AddDishModal(
-                        restaurantId: widget.restaurantId,
-                        dishToEdit: dishMap,
-                        onDishAdded: () {
-                          _loadDishes();
-                        },
+                try {
+                  // Convert Dish object to Map for the modal
+                  final dishMap = {
+                    'id': dish.id,
+                    'name': dish.name,
+                    'category': dish.category,
+                    'price': dish.price,
+                    'preparation_time': dish.preparationTime,
+                    'pictures': dish.pictures,
+                    'restaurant_id': widget.restaurantId,
+                  };
+                  
+                  debugPrint('📋 Dish data prepared: $dishMap');
+                  
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (context) => Padding(
+                      padding: EdgeInsets.only(
+                        bottom: MediaQuery.of(context).viewInsets.bottom,
+                      ),
+                      child: DraggableScrollableSheet(
+                        initialChildSize: 0.95,
+                        minChildSize: 0.5,
+                        maxChildSize: 0.95,
+                        builder: (_, controller) => AddDishModal(
+                          restaurantId: widget.restaurantId,
+                          dishToEdit: dishMap,
+                          onDishAdded: () {
+                            _loadDishes();
+                          },
+                        ),
                       ),
                     ),
-                  ),
-                );
+                  );
+                  debugPrint('🎉 Dish edit modal opened');
+                } catch (e, stackTrace) {
+                  debugPrint('❌ Error opening dish edit modal: $e');
+                  debugPrint('❌ Stack trace: $stackTrace');
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Erreur: ${e.toString()}'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
               } else if (value == 'delete') {
+                debugPrint('🗑️ Deleting dish ID: ${dish.id}');
                 // Show delete confirmation
                 final confirmed = await showDialog<bool>(
                   context: context,
