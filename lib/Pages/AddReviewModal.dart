@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_app_project/Pages/UI/StarRating.dart';
+import 'package:mobile_app_project/Pages/UI/AppColors.dart';
 import 'package:mobile_app_project/services/Review/ReviewService.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -45,16 +46,18 @@ class _AddReviewModalState extends State<AddReviewModal> {
     if (_rating == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Row(
-            children: const [
+          content: const Row(
+            children: [
               Icon(Icons.warning, color: Colors.white),
               SizedBox(width: 12),
               Text('Veuillez sélectionner une note'),
             ],
           ),
-          backgroundColor: Colors.orange,
+          backgroundColor: AppColors.primaryOrange,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           margin: const EdgeInsets.all(16),
         ),
       );
@@ -83,16 +86,18 @@ class _AddReviewModalState extends State<AddReviewModal> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Row(
-              children: const [
+            content: const Row(
+              children: [
                 Icon(Icons.check_circle, color: Colors.white),
                 SizedBox(width: 12),
                 Text('Avis publié avec succès'),
               ],
             ),
-            backgroundColor: const Color(0xFF10B981),
+            backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
             margin: const EdgeInsets.all(16),
           ),
         );
@@ -112,14 +117,14 @@ class _AddReviewModalState extends State<AddReviewModal> {
               children: [
                 const Icon(Icons.error_outline, color: Colors.white),
                 const SizedBox(width: 12),
-                Expanded(
-                  child: Text('Erreur: ${e.toString()}'),
-                ),
+                Expanded(child: Text('Erreur: ${e.toString()}')),
               ],
             ),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
             margin: const EdgeInsets.all(16),
           ),
         );
@@ -152,12 +157,19 @@ class _AddReviewModalState extends State<AddReviewModal> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF10B981).withOpacity(0.1),
+                      gradient: AppColors.gradientPrimary,
                       borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primaryOrange.withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
                     child: const Icon(
                       Icons.rate_review,
-                      color: Color(0xFF10B981),
+                      color: Colors.white,
                       size: 24,
                     ),
                   ),
@@ -171,15 +183,15 @@ class _AddReviewModalState extends State<AddReviewModal> {
                           style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF1F2937),
+                            color: AppColors.textPrimary,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           widget.restaurantName,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 14,
-                            color: Colors.grey[600],
+                            color: AppColors.textSecondary,
                           ),
                         ),
                       ],
@@ -188,7 +200,7 @@ class _AddReviewModalState extends State<AddReviewModal> {
                   IconButton(
                     icon: const Icon(Icons.close),
                     onPressed: () => Navigator.of(context).pop(),
-                    color: Colors.grey[600],
+                    color: AppColors.textSecondary,
                   ),
                 ],
               ),
@@ -258,7 +270,10 @@ class _AddReviewModalState extends State<AddReviewModal> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFF10B981), width: 2),
+                    borderSide: const BorderSide(
+                      color: AppColors.primaryOrange,
+                      width: 2,
+                    ),
                   ),
                 ),
               ),
@@ -270,7 +285,7 @@ class _AddReviewModalState extends State<AddReviewModal> {
                 child: ElevatedButton(
                   onPressed: _isSubmitting ? null : _submitReview,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF10B981),
+                    backgroundColor: AppColors.primaryOrange,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),

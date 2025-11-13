@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:mobile_app_project/services/Restaurant/DishService.dart';
+import 'package:mobile_app_project/Pages/UI/AppColors.dart';
 
 class AddDishModal extends StatefulWidget {
   final int restaurantId;
@@ -106,7 +107,9 @@ class _AddDishModalState extends State<AddDishModal> {
         setState(() {
           _isSubmitting = false;
         });
-        _showErrorSnackBar('Erreur lors de la création du plat: ${e.toString()}');
+        _showErrorSnackBar(
+          'Erreur lors de la création du plat: ${e.toString()}',
+        );
       }
     }
   }
@@ -121,7 +124,7 @@ class _AddDishModalState extends State<AddDishModal> {
             Text(message),
           ],
         ),
-        backgroundColor: const Color(0xFF10B981),
+        backgroundColor: Colors.green,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.all(16),
@@ -176,34 +179,51 @@ class _AddDishModalState extends State<AddDishModal> {
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF10B981), Color(0xFF059669)],
-                    ),
-                    borderRadius: BorderRadius.circular(10),
+                    gradient: AppColors.gradientPrimary,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primaryOrange.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
                   child: const Icon(
                     Icons.restaurant_menu,
                     color: Colors.white,
-                    size: 20,
+                    size: 24,
                   ),
                 ),
                 const SizedBox(width: 12),
                 const Expanded(
-                  child: Text(
-                    'Ajouter un plat',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1F2937),
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Ajouter un plat',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      Text(
+                        'Remplissez les informations',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 IconButton(
                   icon: const Icon(Icons.close),
                   onPressed: () => Navigator.of(context).pop(),
-                  color: Colors.grey,
+                  color: AppColors.textSecondary,
                 ),
               ],
             ),
@@ -220,11 +240,11 @@ class _AddDishModalState extends State<AddDishModal> {
                   children: [
                     // Name field
                     const Text(
-                      'Nom du plat',
+                      'Nom du plat *',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF1F2937),
+                        color: AppColors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -232,7 +252,7 @@ class _AddDishModalState extends State<AddDishModal> {
                       controller: _nameController,
                       decoration: InputDecoration(
                         hintText: 'Ex: Pizza Margherita',
-                        prefixIcon: const Icon(Icons.restaurant, color: Color(0xFF10B981)),
+                        prefixIcon: const Icon(Icons.restaurant, size: 20),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide(color: Colors.grey[300]!),
@@ -243,10 +263,21 @@ class _AddDishModalState extends State<AddDishModal> {
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFF10B981), width: 2),
+                          borderSide: const BorderSide(
+                            color: AppColors.primaryOrange,
+                            width: 2,
+                          ),
+                        ),
+                        errorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Colors.red),
                         ),
                         filled: true,
                         fillColor: Colors.grey[50],
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
                       ),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
@@ -259,11 +290,11 @@ class _AddDishModalState extends State<AddDishModal> {
 
                     // Category field
                     const Text(
-                      'Catégorie',
+                      'Catégorie *',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF1F2937),
+                        color: AppColors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -271,7 +302,7 @@ class _AddDishModalState extends State<AddDishModal> {
                       value: _selectedCategory,
                       decoration: InputDecoration(
                         hintText: 'Sélectionnez une catégorie',
-                        prefixIcon: const Icon(Icons.category, color: Color(0xFF10B981)),
+                        prefixIcon: const Icon(Icons.category, size: 20),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide(color: Colors.grey[300]!),
@@ -282,10 +313,21 @@ class _AddDishModalState extends State<AddDishModal> {
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFF10B981), width: 2),
+                          borderSide: const BorderSide(
+                            color: AppColors.primaryOrange,
+                            width: 2,
+                          ),
+                        ),
+                        errorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Colors.red),
                         ),
                         filled: true,
                         fillColor: Colors.grey[50],
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
                       ),
                       items: _categories.map((category) {
                         return DropdownMenuItem(
@@ -309,20 +351,22 @@ class _AddDishModalState extends State<AddDishModal> {
 
                     // Price field
                     const Text(
-                      'Prix (€)',
+                      'Prix (€) *',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF1F2937),
+                        color: AppColors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _priceController,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       decoration: InputDecoration(
                         hintText: 'Ex: 12.50',
-                        prefixIcon: const Icon(Icons.euro, color: Color(0xFF10B981)),
+                        prefixIcon: const Icon(Icons.euro, size: 20),
                         suffixText: '€',
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -334,10 +378,21 @@ class _AddDishModalState extends State<AddDishModal> {
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFF10B981), width: 2),
+                          borderSide: const BorderSide(
+                            color: AppColors.primaryOrange,
+                            width: 2,
+                          ),
+                        ),
+                        errorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Colors.red),
                         ),
                         filled: true,
                         fillColor: Colors.grey[50],
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
                       ),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
@@ -354,11 +409,11 @@ class _AddDishModalState extends State<AddDishModal> {
 
                     // Preparation time field
                     const Text(
-                      'Temps de préparation',
+                      'Temps de préparation *',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF1F2937),
+                        color: AppColors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -366,7 +421,7 @@ class _AddDishModalState extends State<AddDishModal> {
                       controller: _preparationTimeController,
                       decoration: InputDecoration(
                         hintText: 'Ex: 15 min',
-                        prefixIcon: const Icon(Icons.access_time, color: Color(0xFF10B981)),
+                        prefixIcon: const Icon(Icons.access_time, size: 20),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide(color: Colors.grey[300]!),
@@ -377,10 +432,21 @@ class _AddDishModalState extends State<AddDishModal> {
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFF10B981), width: 2),
+                          borderSide: const BorderSide(
+                            color: AppColors.primaryOrange,
+                            width: 2,
+                          ),
+                        ),
+                        errorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Colors.red),
                         ),
                         filled: true,
                         fillColor: Colors.grey[50],
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
                       ),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
@@ -389,7 +455,7 @@ class _AddDishModalState extends State<AddDishModal> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 24),
 
                     // Pictures section
                     const Text(
@@ -397,7 +463,7 @@ class _AddDishModalState extends State<AddDishModal> {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF1F2937),
+                        color: AppColors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -406,13 +472,14 @@ class _AddDishModalState extends State<AddDishModal> {
 
                     // Submit button
                     SizedBox(
+                      height: 54,
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: _isSubmitting ? null : _submitForm,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF10B981),
+                          backgroundColor: AppColors.primaryOrange,
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          disabledBackgroundColor: Colors.grey[300],
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -424,15 +491,24 @@ class _AddDishModalState extends State<AddDishModal> {
                                 width: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
                                 ),
                               )
-                            : const Text(
-                                'Créer le plat',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                            : const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.add_circle_outline, size: 20),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Créer le plat',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
                               ),
                       ),
                     ),
@@ -466,23 +542,23 @@ class _AddDishModalState extends State<AddDishModal> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFF10B981), width: 1.5),
+                border: Border.all(color: AppColors.primaryOrange, width: 2),
               ),
-              child: Row(
+              child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.add_photo_alternate,
-                    color: Color(0xFF10B981),
+                    color: AppColors.primaryOrange,
                     size: 24,
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   Text(
                     'Ajouter des photos',
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey[800],
+                      color: AppColors.primaryOrange,
                     ),
                   ),
                 ],
@@ -497,7 +573,7 @@ class _AddDishModalState extends State<AddDishModal> {
               style: TextStyle(
                 fontSize: 13,
                 color: Colors.grey[700],
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: 12),
@@ -514,19 +590,12 @@ class _AddDishModalState extends State<AddDishModal> {
           const SizedBox(height: 12),
           Row(
             children: [
-              Icon(
-                Icons.info_outline,
-                size: 16,
-                color: Colors.grey[600],
-              ),
+              Icon(Icons.info_outline, size: 16, color: Colors.grey[600]),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   'Ajoutez jusqu\'à 5 photos du plat',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
               ),
             ],
@@ -569,11 +638,7 @@ class _AddDishModalState extends State<AddDishModal> {
                     ),
                   ],
                 ),
-                child: const Icon(
-                  Icons.close,
-                  color: Colors.white,
-                  size: 16,
-                ),
+                child: const Icon(Icons.close, color: Colors.white, size: 16),
               ),
             ),
           ),
@@ -584,9 +649,7 @@ class _AddDishModalState extends State<AddDishModal> {
 
   Future<void> _pickImages() async {
     try {
-      final List<XFile> images = await _picker.pickMultiImage(
-        imageQuality: 80,
-      );
+      final List<XFile> images = await _picker.pickMultiImage(imageQuality: 80);
 
       if (images.isNotEmpty) {
         setState(() {

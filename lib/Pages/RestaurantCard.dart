@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_app_project/Pages/mock_data.dart';
+import 'package:mobile_app_project/Pages/UI/AppColors.dart';
 import 'dart:io';
 
 class RestaurantCard extends StatefulWidget {
@@ -116,9 +117,7 @@ class _RestaurantCardState extends State<RestaurantCard> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: widget.restaurant.isOpen
-                  ? const Color(0xFF22C55E) // green-500
-                  : Colors.red,
+              color: widget.restaurant.isOpen ? Colors.green : Colors.red,
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
@@ -154,13 +153,16 @@ class _RestaurantCardState extends State<RestaurantCard> {
             style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF1F2937),
+              color: AppColors.textPrimary,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             widget.restaurant.cuisine,
-            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+            style: const TextStyle(
+              fontSize: 14,
+              color: AppColors.textSecondary,
+            ),
           ),
           const SizedBox(height: 16),
 
@@ -174,7 +176,7 @@ class _RestaurantCardState extends State<RestaurantCard> {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFEF3C7), // yellow-50
+                  color: AppColors.primaryYellow.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -183,7 +185,7 @@ class _RestaurantCardState extends State<RestaurantCard> {
                     const Icon(
                       Icons.star,
                       size: 16,
-                      color: Color(0xFFFACC15), // yellow-500
+                      color: AppColors.primaryYellow,
                     ),
                     const SizedBox(width: 6),
                     Text(
@@ -191,12 +193,16 @@ class _RestaurantCardState extends State<RestaurantCard> {
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
                       ),
                     ),
                     const SizedBox(width: 4),
                     Text(
                       '(${widget.restaurant.reviews})',
-                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                   ],
                 ),
@@ -206,15 +212,14 @@ class _RestaurantCardState extends State<RestaurantCard> {
               // Distance
               Row(
                 children: [
-                  const Icon(
-                    Icons.location_on,
-                    size: 16,
-                    color: Color(0xFF3B82F6),
-                  ),
+                  Icon(Icons.location_on, size: 16, color: Colors.blue),
                   const SizedBox(width: 6),
                   Text(
                     widget.restaurant.distance,
-                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ],
               ),
@@ -229,10 +234,17 @@ class _RestaurantCardState extends State<RestaurantCard> {
               // Prix
               Row(
                 children: [
-                  Icon(Icons.attach_money, size: 16, color: Colors.grey[600]),
+                  const Icon(
+                    Icons.attach_money,
+                    size: 16,
+                    color: AppColors.textSecondary,
+                  ),
                   Text(
                     widget.restaurant.priceRange,
-                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ],
               ),
@@ -245,14 +257,14 @@ class _RestaurantCardState extends State<RestaurantCard> {
                     const Icon(
                       Icons.access_time,
                       size: 16,
-                      color: Color(0xFF22C55E), // green-600
+                      color: Colors.green,
                     ),
                     const SizedBox(width: 6),
                     Text(
                       'Ouvert jusqu\'à ${widget.restaurant.openUntil}',
                       style: const TextStyle(
                         fontSize: 13,
-                        color: Color(0xFF22C55E),
+                        color: Colors.green,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -276,18 +288,11 @@ class _RestaurantCardState extends State<RestaurantCard> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.restaurant,
-              size: 60,
-              color: Colors.grey[500],
-            ),
+            Icon(Icons.restaurant, size: 60, color: Colors.grey[500]),
             const SizedBox(height: 8),
             Text(
               'Image non disponible',
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 12,
-              ),
+              style: TextStyle(color: Colors.grey[600], fontSize: 12),
             ),
           ],
         ),
@@ -322,18 +327,11 @@ class _RestaurantCardState extends State<RestaurantCard> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.broken_image,
-                  size: 60,
-                  color: Colors.grey[500],
-                ),
+                Icon(Icons.broken_image, size: 60, color: Colors.grey[500]),
                 const SizedBox(height: 8),
                 Text(
                   'Image non disponible',
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
                 ),
               ],
             ),
@@ -350,18 +348,11 @@ class _RestaurantCardState extends State<RestaurantCard> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.restaurant,
-            size: 60,
-            color: Colors.grey[500],
-          ),
+          Icon(Icons.restaurant, size: 60, color: Colors.grey[500]),
           const SizedBox(height: 8),
           Text(
             'Image non disponible',
-            style: TextStyle(
-              color: Colors.grey[600],
-              fontSize: 12,
-            ),
+            style: TextStyle(color: Colors.grey[600], fontSize: 12),
           ),
         ],
       ),

@@ -39,7 +39,8 @@ class _OwnerReviewsDashboardState extends State<OwnerReviewsDashboard> {
       }
 
       // Get all restaurants owned by this user
-      final restaurants = await RestaurantService.instance.getRestaurantsByOwner(ownerId);
+      final restaurants = await RestaurantService.instance
+          .getRestaurantsByOwner(ownerId);
 
       // Load reviews and ratings for each restaurant
       final Map<int, List<Map<String, dynamic>>> reviews = {};
@@ -47,13 +48,16 @@ class _OwnerReviewsDashboardState extends State<OwnerReviewsDashboard> {
 
       for (final restaurant in restaurants) {
         final restaurantId = restaurant['id'] as int;
-        
+
         // Get reviews
-        final restaurantReviews = await ReviewService.instance.getRestaurantReviews(restaurantId);
+        final restaurantReviews = await ReviewService.instance
+            .getRestaurantReviews(restaurantId);
         reviews[restaurantId] = restaurantReviews;
 
         // Get rating summary
-        final ratingData = await ReviewService.instance.getRestaurantRating(restaurantId);
+        final ratingData = await ReviewService.instance.getRestaurantRating(
+          restaurantId,
+        );
         if (ratingData != null) {
           ratings[restaurantId] = ratingData;
         }
@@ -65,7 +69,7 @@ class _OwnerReviewsDashboardState extends State<OwnerReviewsDashboard> {
           _restaurantReviews = reviews;
           _restaurantRatings = ratings;
           _isLoading = false;
-          
+
           // Auto-select first restaurant if available
           if (_restaurants.isNotEmpty && _selectedRestaurantId == null) {
             _selectedRestaurantId = _restaurants.first['id'] as int;
@@ -109,8 +113,8 @@ class _OwnerReviewsDashboardState extends State<OwnerReviewsDashboard> {
               child: CircularProgressIndicator(color: Color(0xFF10B981)),
             )
           : _restaurants.isEmpty
-              ? _buildEmptyState()
-              : _buildContent(),
+          ? _buildEmptyState()
+          : _buildContent(),
     );
   }
 
@@ -119,26 +123,16 @@ class _OwnerReviewsDashboardState extends State<OwnerReviewsDashboard> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.restaurant,
-            size: 64,
-            color: Colors.grey[400],
-          ),
+          Icon(Icons.restaurant, size: 64, color: Colors.grey[400]),
           const SizedBox(height: 16),
           Text(
             'Aucun restaurant trouvé',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
           ),
           const SizedBox(height: 8),
           Text(
             'Créez un restaurant pour voir les avis',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[500],
-            ),
+            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
           ),
         ],
       ),
@@ -150,10 +144,10 @@ class _OwnerReviewsDashboardState extends State<OwnerReviewsDashboard> {
       children: [
         // Restaurant selector
         if (_restaurants.length > 1) _buildRestaurantSelector(),
-        
+
         // Summary cards
         _buildSummaryCards(),
-        
+
         // Reviews list
         Expanded(child: _buildReviewsList()),
       ],
@@ -185,10 +179,7 @@ class _OwnerReviewsDashboardState extends State<OwnerReviewsDashboard> {
             value: restaurant['id'] as int,
             child: Text(
               restaurant['name'] ?? 'Restaurant',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
           );
         }).toList(),
@@ -205,7 +196,8 @@ class _OwnerReviewsDashboardState extends State<OwnerReviewsDashboard> {
     if (_selectedRestaurantId == null) return const SizedBox.shrink();
 
     final ratingData = _restaurantRatings[_selectedRestaurantId];
-    final averageRating = (ratingData?['average_rating'] as num?)?.toDouble() ?? 0.0;
+    final averageRating =
+        (ratingData?['average_rating'] as num?)?.toDouble() ?? 0.0;
     final totalReviews = (ratingData?['total_reviews'] as int?) ?? 0;
     final reviews = _restaurantReviews[_selectedRestaurantId] ?? [];
 
@@ -243,10 +235,7 @@ class _OwnerReviewsDashboardState extends State<OwnerReviewsDashboard> {
               value: totalReviews.toString(),
               subtitle: Text(
                 'Tous les avis',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                ),
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
               ),
               color: const Color(0xFF10B981),
             ),
@@ -260,10 +249,7 @@ class _OwnerReviewsDashboardState extends State<OwnerReviewsDashboard> {
               value: recentReviews.toString(),
               subtitle: Text(
                 'Nouveaux avis',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                ),
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
               ),
               color: const Color(0xFF3B82F6),
             ),
@@ -306,10 +292,7 @@ class _OwnerReviewsDashboardState extends State<OwnerReviewsDashboard> {
           const SizedBox(height: 12),
           Text(
             title,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 4),
@@ -338,26 +321,16 @@ class _OwnerReviewsDashboardState extends State<OwnerReviewsDashboard> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.rate_review_outlined,
-              size: 64,
-              color: Colors.grey[400],
-            ),
+            Icon(Icons.rate_review_outlined, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
               'Aucun avis pour ce restaurant',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
             ),
             const SizedBox(height: 8),
             Text(
               'Les avis de vos clients apparaîtront ici',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[500],
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
             ),
           ],
         ),

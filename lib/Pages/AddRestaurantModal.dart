@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_app_project/Pages/UI/PhoneInputField.dart';
 import 'package:mobile_app_project/Pages/UI/AddressInputField.dart';
+import 'package:mobile_app_project/Pages/UI/AppColors.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:mobile_app_project/services/Restaurant/RestaurantService.dart';
@@ -92,8 +93,12 @@ class _AddRestaurantModalState extends State<AddRestaurantModal> {
       final workTimeList = _workHours.entries.map((entry) {
         return {
           'day': entry.key,
-          'open_time': entry.value['isOpen'] ? entry.value['openTime'] : '00:00',
-          'close_time': entry.value['isOpen'] ? entry.value['closeTime'] : '00:00',
+          'open_time': entry.value['isOpen']
+              ? entry.value['openTime']
+              : '00:00',
+          'close_time': entry.value['isOpen']
+              ? entry.value['closeTime']
+              : '00:00',
           'is_closed': !entry.value['isOpen'],
         };
       }).toList();
@@ -132,7 +137,9 @@ class _AddRestaurantModalState extends State<AddRestaurantModal> {
         setState(() {
           _isSubmitting = false;
         });
-        _showErrorSnackBar('Erreur lors de la création du restaurant: ${e.toString()}');
+        _showErrorSnackBar(
+          'Erreur lors de la création du restaurant: ${e.toString()}',
+        );
       }
     }
   }
@@ -147,7 +154,7 @@ class _AddRestaurantModalState extends State<AddRestaurantModal> {
             Text(message),
           ],
         ),
-        backgroundColor: const Color(0xFF10B981),
+        backgroundColor: const Color(0xFF4CAF50),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.all(16),
@@ -162,7 +169,7 @@ class _AddRestaurantModalState extends State<AddRestaurantModal> {
           children: [
             const Icon(Icons.error_outline, color: Colors.white),
             const SizedBox(width: 12),
-            Text(message),
+            Expanded(child: Text(message)),
           ],
         ),
         backgroundColor: Colors.red,
@@ -204,10 +211,15 @@ class _AddRestaurantModalState extends State<AddRestaurantModal> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF10B981), Color(0xFF059669)],
-                    ),
+                    gradient: AppColors.gradientPrimary,
                     borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primaryOrange.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
                   child: const Icon(
                     Icons.restaurant,
@@ -225,14 +237,14 @@ class _AddRestaurantModalState extends State<AddRestaurantModal> {
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF1F2937),
+                          color: AppColors.textPrimary,
                         ),
                       ),
                       Text(
                         'Remplissez les informations',
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.grey,
+                          color: AppColors.textSecondary,
                         ),
                       ),
                     ],
@@ -241,7 +253,7 @@ class _AddRestaurantModalState extends State<AddRestaurantModal> {
                 IconButton(
                   onPressed: () => Navigator.of(context).pop(),
                   icon: const Icon(Icons.close),
-                  color: Colors.grey,
+                  color: AppColors.textSecondary,
                 ),
               ],
             ),
@@ -262,7 +274,7 @@ class _AddRestaurantModalState extends State<AddRestaurantModal> {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF1F2937),
+                        color: AppColors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -284,7 +296,7 @@ class _AddRestaurantModalState extends State<AddRestaurantModal> {
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(
-                            color: Color(0xFF10B981),
+                            color: AppColors.primaryOrange,
                             width: 2,
                           ),
                         ),
@@ -314,7 +326,7 @@ class _AddRestaurantModalState extends State<AddRestaurantModal> {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF1F2937),
+                        color: AppColors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -333,7 +345,7 @@ class _AddRestaurantModalState extends State<AddRestaurantModal> {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF1F2937),
+                        color: AppColors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -357,7 +369,7 @@ class _AddRestaurantModalState extends State<AddRestaurantModal> {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF1F2937),
+                        color: AppColors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -369,7 +381,7 @@ class _AddRestaurantModalState extends State<AddRestaurantModal> {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF1F2937),
+                        color: AppColors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -392,7 +404,7 @@ class _AddRestaurantModalState extends State<AddRestaurantModal> {
                       child: ElevatedButton(
                         onPressed: _isSubmitting ? null : _submitForm,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF10B981),
+                          backgroundColor: AppColors.primaryOrange,
                           foregroundColor: Colors.white,
                           disabledBackgroundColor: Colors.grey[300],
                           elevation: 0,
@@ -436,7 +448,7 @@ class _AddRestaurantModalState extends State<AddRestaurantModal> {
                             ? null
                             : () => Navigator.of(context).pop(),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.grey[700],
+                          foregroundColor: AppColors.textSecondary,
                           side: BorderSide(color: Colors.grey[300]!),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -468,12 +480,7 @@ class _AddRestaurantModalState extends State<AddRestaurantModal> {
 
     return Container(
       decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: Colors.grey[200]!,
-            width: 1,
-          ),
-        ),
+        border: Border(bottom: BorderSide(color: Colors.grey[200]!, width: 1)),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Column(
@@ -483,7 +490,7 @@ class _AddRestaurantModalState extends State<AddRestaurantModal> {
             children: [
               Icon(
                 Icons.calendar_today,
-                color: isOpen ? const Color(0xFF10B981) : Colors.grey[400],
+                color: isOpen ? AppColors.primaryOrange : Colors.grey[400],
                 size: 18,
               ),
               const SizedBox(width: 12),
@@ -496,14 +503,18 @@ class _AddRestaurantModalState extends State<AddRestaurantModal> {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: isOpen ? const Color(0xFF1F2937) : Colors.grey[600],
+                        color: isOpen
+                            ? AppColors.textPrimary
+                            : Colors.grey[600],
                       ),
                     ),
                     Text(
                       isOpen ? 'Ouvert' : 'Fermé',
                       style: TextStyle(
                         fontSize: 12,
-                        color: isOpen ? const Color(0xFF10B981) : Colors.grey[500],
+                        color: isOpen
+                            ? AppColors.primaryOrange
+                            : Colors.grey[500],
                       ),
                     ),
                   ],
@@ -516,7 +527,7 @@ class _AddRestaurantModalState extends State<AddRestaurantModal> {
                     _workHours[day]!['isOpen'] = value;
                   });
                 },
-                activeColor: const Color(0xFF10B981),
+                activeColor: AppColors.primaryOrange,
               ),
             ],
           ),
@@ -576,10 +587,10 @@ class _AddRestaurantModalState extends State<AddRestaurantModal> {
             const SizedBox(height: 4),
             Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.access_time,
                   size: 16,
-                  color: const Color(0xFF10B981),
+                  color: AppColors.primaryOrange,
                 ),
                 const SizedBox(width: 6),
                 Text(
@@ -587,7 +598,7 @@ class _AddRestaurantModalState extends State<AddRestaurantModal> {
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF1F2937),
+                    color: AppColors.textPrimary,
                   ),
                 ),
               ],
@@ -598,7 +609,11 @@ class _AddRestaurantModalState extends State<AddRestaurantModal> {
     );
   }
 
-  Future<void> _selectTime(String day, String timeType, String currentTime) async {
+  Future<void> _selectTime(
+    String day,
+    String timeType,
+    String currentTime,
+  ) async {
     final parts = currentTime.split(':');
     final initialHour = int.tryParse(parts[0]) ?? 9;
     final initialMinute = int.tryParse(parts[1]) ?? 0;
@@ -610,10 +625,10 @@ class _AddRestaurantModalState extends State<AddRestaurantModal> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.light(
-              primary: Color(0xFF10B981),
+              primary: AppColors.primaryOrange,
               onPrimary: Colors.white,
               surface: Colors.white,
-              onSurface: Color(0xFF1F2937),
+              onSurface: AppColors.textPrimary,
             ),
           ),
           child: child!,
@@ -622,7 +637,8 @@ class _AddRestaurantModalState extends State<AddRestaurantModal> {
     );
 
     if (picked != null) {
-      final formattedTime = '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+      final formattedTime =
+          '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
       setState(() {
         _workHours[day]![timeType] = formattedTime;
       });
@@ -650,26 +666,26 @@ class _AddRestaurantModalState extends State<AddRestaurantModal> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: const Color(0xFF10B981),
+                  color: AppColors.primaryOrange,
                   width: 2,
                   style: BorderStyle.solid,
                 ),
               ),
-              child: Row(
+              child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
                     Icons.add_photo_alternate,
-                    color: const Color(0xFF10B981),
+                    color: AppColors.primaryOrange,
                     size: 24,
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   Text(
                     'Ajouter des photos',
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF10B981),
+                      color: AppColors.primaryOrange,
                     ),
                   ),
                 ],
@@ -703,19 +719,12 @@ class _AddRestaurantModalState extends State<AddRestaurantModal> {
           const SizedBox(height: 12),
           Row(
             children: [
-              Icon(
-                Icons.info_outline,
-                size: 16,
-                color: Colors.grey[600],
-              ),
+              Icon(Icons.info_outline, size: 16, color: Colors.grey[600]),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   'Ajoutez jusqu\'à 10 photos de votre restaurant',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
               ),
             ],
@@ -757,11 +766,7 @@ class _AddRestaurantModalState extends State<AddRestaurantModal> {
                     ),
                   ],
                 ),
-                child: const Icon(
-                  Icons.close,
-                  color: Colors.white,
-                  size: 16,
-                ),
+                child: const Icon(Icons.close, color: Colors.white, size: 16),
               ),
             ),
           ),
@@ -772,9 +777,7 @@ class _AddRestaurantModalState extends State<AddRestaurantModal> {
 
   Future<void> _pickImages() async {
     try {
-      final List<XFile> images = await _picker.pickMultiImage(
-        imageQuality: 80,
-      );
+      final List<XFile> images = await _picker.pickMultiImage(imageQuality: 80);
 
       if (images.isNotEmpty) {
         setState(() {

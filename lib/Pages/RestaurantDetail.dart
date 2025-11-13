@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile_app_project/Pages/UI/RestaurantReviewsSection.dart';
+import 'package:mobile_app_project/Pages/UI/AppColors.dart';
 import 'package:mobile_app_project/services/Restaurant/RestaurantService.dart';
 import 'package:mobile_app_project/services/Restaurant/DishService.dart';
 import 'package:mobile_app_project/services/Review/ReviewService.dart';
@@ -25,7 +26,7 @@ class _RestaurantDetailState extends State<RestaurantDetail>
   bool _isFavorite = false;
   bool _isLoading = true;
   late TabController _tabController;
-  
+
   Map<String, dynamic>? _restaurantData;
   List<Map<String, dynamic>> _dishes = [];
   double _averageRating = 0.0;
@@ -50,17 +51,23 @@ class _RestaurantDetailState extends State<RestaurantDetail>
 
     try {
       // Fetch restaurant data
-      final restaurantData = await RestaurantService.instance.getRestaurant(widget.restaurantId);
-      
+      final restaurantData = await RestaurantService.instance.getRestaurant(
+        widget.restaurantId,
+      );
+
       if (restaurantData == null) {
         throw Exception('Restaurant not found');
       }
 
       // Fetch dishes for the restaurant
-      final dishes = await DishService.instance.getDishesByRestaurant(widget.restaurantId);
+      final dishes = await DishService.instance.getDishesByRestaurant(
+        widget.restaurantId,
+      );
 
       // Fetch rating data
-      final ratingData = await ReviewService.instance.getRestaurantRating(widget.restaurantId);
+      final ratingData = await ReviewService.instance.getRestaurantRating(
+        widget.restaurantId,
+      );
 
       if (mounted) {
         setState(() {
@@ -68,11 +75,17 @@ class _RestaurantDetailState extends State<RestaurantDetail>
           _restaurantName = restaurantData['name'] as String;
           _restaurantAddress = restaurantData['adresse'] as String;
           _restaurantPhone = restaurantData['phone'] as String? ?? '';
-          _pictures = (restaurantData['pictures'] as List<dynamic>).cast<String>();
-          _workTime = (restaurantData['work_time'] as List<dynamic>).cast<Map<String, dynamic>>();
+          _pictures = (restaurantData['pictures'] as List<dynamic>)
+              .cast<String>();
+          _workTime = (restaurantData['work_time'] as List<dynamic>)
+              .cast<Map<String, dynamic>>();
           _dishes = dishes;
-          _averageRating = ratingData != null ? (ratingData['average_rating'] as num?)?.toDouble() ?? 0.0 : 0.0;
-          _totalReviews = ratingData != null ? (ratingData['total_reviews'] as int?) ?? 0 : 0;
+          _averageRating = ratingData != null
+              ? (ratingData['average_rating'] as num?)?.toDouble() ?? 0.0
+              : 0.0;
+          _totalReviews = ratingData != null
+              ? (ratingData['total_reviews'] as int?) ?? 0
+              : 0;
           _isLoading = false;
         });
       }
@@ -97,7 +110,9 @@ class _RestaurantDetailState extends State<RestaurantDetail>
       context: context,
       builder: (BuildContext context) {
         return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
           backgroundColor: Colors.white,
           elevation: 10,
           child: Container(
@@ -111,13 +126,11 @@ class _RestaurantDetailState extends State<RestaurantDetail>
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF10B981), Color(0xFF059669)],
-                        ),
+                        gradient: AppColors.gradientPrimary,
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF10B981).withOpacity(0.3),
+                            color: AppColors.primaryOrange.withOpacity(0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
@@ -136,12 +149,15 @@ class _RestaurantDetailState extends State<RestaurantDetail>
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF1F2937),
+                          color: AppColors.textPrimary,
                         ),
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close, color: Color(0xFF6B7280)),
+                      icon: const Icon(
+                        Icons.close,
+                        color: AppColors.textSecondary,
+                      ),
                       onPressed: () => Navigator.of(context).pop(),
                       tooltip: 'Fermer',
                     ),
@@ -155,7 +171,7 @@ class _RestaurantDetailState extends State<RestaurantDetail>
                   style: const TextStyle(
                     fontSize: 16,
                     height: 1.6,
-                    color: Color(0xFF4B5563),
+                    color: AppColors.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -199,7 +215,7 @@ class _RestaurantDetailState extends State<RestaurantDetail>
                           child: Icon(
                             Icons.location_on,
                             size: 40,
-                            color: Colors.red[700],
+                            color: AppColors.primaryOrange,
                           ),
                         ),
                       ],
@@ -221,9 +237,11 @@ class _RestaurantDetailState extends State<RestaurantDetail>
                               Text('Ouverture de la carte à venir'),
                             ],
                           ),
-                          backgroundColor: const Color(0xFF10B981),
+                          backgroundColor: AppColors.primaryOrange,
                           behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           margin: const EdgeInsets.all(16),
                         ),
                       );
@@ -231,7 +249,7 @@ class _RestaurantDetailState extends State<RestaurantDetail>
                     icon: const Icon(Icons.directions),
                     label: const Text('Obtenir l\'itinéraire'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF10B981),
+                      backgroundColor: AppColors.primaryOrange,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       elevation: 0,
@@ -254,7 +272,9 @@ class _RestaurantDetailState extends State<RestaurantDetail>
       context: context,
       builder: (BuildContext context) {
         return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
           backgroundColor: Colors.white,
           elevation: 10,
           child: Container(
@@ -268,13 +288,11 @@ class _RestaurantDetailState extends State<RestaurantDetail>
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF10B981), Color(0xFF059669)],
-                        ),
+                        gradient: AppColors.gradientPrimary,
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF10B981).withOpacity(0.3),
+                            color: AppColors.primaryOrange.withOpacity(0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
@@ -293,12 +311,15 @@ class _RestaurantDetailState extends State<RestaurantDetail>
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF1F2937),
+                          color: AppColors.textPrimary,
                         ),
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close, color: Color(0xFF6B7280)),
+                      icon: const Icon(
+                        Icons.close,
+                        color: AppColors.textSecondary,
+                      ),
                       onPressed: () => Navigator.of(context).pop(),
                       tooltip: 'Fermer',
                     ),
@@ -311,10 +332,7 @@ class _RestaurantDetailState extends State<RestaurantDetail>
                     child: Center(
                       child: Text(
                         'Horaires non disponibles',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 16,
-                        ),
+                        style: TextStyle(color: Colors.grey[600], fontSize: 16),
                       ),
                     ),
                   )
@@ -323,21 +341,22 @@ class _RestaurantDetailState extends State<RestaurantDetail>
                     final day = schedule['day'] as String? ?? '';
                     final hours = schedule['hours'] as String? ?? '';
                     final isToday = _isToday(day);
-                    
+
                     return Container(
                       margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 14,
+                        horizontal: 16,
+                      ),
                       decoration: BoxDecoration(
-                        gradient: isToday 
-                            ? const LinearGradient(
-                                colors: [Color(0xFF10B981), Color(0xFF059669)],
-                              )
-                            : null,
-                        color: isToday ? null : const Color(0xFFF9FAFB),
+                        gradient: isToday ? AppColors.gradientPrimary : null,
+                        color: isToday ? null : AppColors.background,
                         borderRadius: BorderRadius.circular(12),
-                        border: isToday 
-                            ? null 
-                            : Border.all(color: const Color(0xFFE5E7EB)),
+                        border: isToday
+                            ? null
+                            : Border.all(
+                                color: AppColors.primaryOrange.withOpacity(0.1),
+                              ),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -346,8 +365,12 @@ class _RestaurantDetailState extends State<RestaurantDetail>
                             day,
                             style: TextStyle(
                               fontSize: 15,
-                              fontWeight: isToday ? FontWeight.bold : FontWeight.w500,
-                              color: isToday ? Colors.white : const Color(0xFF374151),
+                              fontWeight: isToday
+                                  ? FontWeight.bold
+                                  : FontWeight.w500,
+                              color: isToday
+                                  ? Colors.white
+                                  : AppColors.textPrimary,
                             ),
                           ),
                           Text(
@@ -355,7 +378,9 @@ class _RestaurantDetailState extends State<RestaurantDetail>
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
-                              color: isToday ? Colors.white : const Color(0xFF10B981),
+                              color: isToday
+                                  ? Colors.white
+                                  : AppColors.primaryOrange,
                             ),
                           ),
                         ],
@@ -375,7 +400,9 @@ class _RestaurantDetailState extends State<RestaurantDetail>
       context: context,
       builder: (BuildContext context) {
         return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
           backgroundColor: Colors.white,
           elevation: 10,
           child: Container(
@@ -389,13 +416,11 @@ class _RestaurantDetailState extends State<RestaurantDetail>
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF10B981), Color(0xFF059669)],
-                        ),
+                        gradient: AppColors.gradientPrimary,
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF10B981).withOpacity(0.3),
+                            color: AppColors.primaryOrange.withOpacity(0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
@@ -414,12 +439,15 @@ class _RestaurantDetailState extends State<RestaurantDetail>
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF1F2937),
+                          color: AppColors.textPrimary,
                         ),
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close, color: Color(0xFF6B7280)),
+                      icon: const Icon(
+                        Icons.close,
+                        color: AppColors.textSecondary,
+                      ),
                       onPressed: () => Navigator.of(context).pop(),
                       tooltip: 'Fermer',
                     ),
@@ -432,10 +460,7 @@ class _RestaurantDetailState extends State<RestaurantDetail>
                     child: Center(
                       child: Text(
                         'Numéro de téléphone non disponible',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 16,
-                        ),
+                        style: TextStyle(color: Colors.grey[600], fontSize: 16),
                       ),
                     ),
                   )
@@ -443,9 +468,11 @@ class _RestaurantDetailState extends State<RestaurantDetail>
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF9FAFB),
+                      color: AppColors.background,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFFE5E7EB)),
+                      border: Border.all(
+                        color: AppColors.primaryOrange.withOpacity(0.1),
+                      ),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -469,7 +496,7 @@ class _RestaurantDetailState extends State<RestaurantDetail>
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 1.2,
-                                  color: Color(0xFF1F2937),
+                                  color: AppColors.textPrimary,
                                 ),
                               ),
                             ],
@@ -479,24 +506,36 @@ class _RestaurantDetailState extends State<RestaurantDetail>
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: const Color(0xFF10B981)),
+                            border: Border.all(color: AppColors.primaryOrange),
                           ),
                           child: IconButton(
-                            icon: const Icon(Icons.copy, color: Color(0xFF10B981)),
+                            icon: const Icon(
+                              Icons.copy,
+                              color: AppColors.primaryOrange,
+                            ),
                             onPressed: () {
-                              Clipboard.setData(ClipboardData(text: _restaurantPhone));
+                              Clipboard.setData(
+                                ClipboardData(text: _restaurantPhone),
+                              );
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: const Row(
                                     children: [
-                                      Icon(Icons.check_circle, color: Colors.white),
+                                      Icon(
+                                        Icons.check_circle,
+                                        color: Colors.white,
+                                      ),
                                       SizedBox(width: 12),
-                                      Text('Numéro copié dans le presse-papier'),
+                                      Text(
+                                        'Numéro copié dans le presse-papier',
+                                      ),
                                     ],
                                   ),
-                                  backgroundColor: const Color(0xFF10B981),
+                                  backgroundColor: AppColors.primaryOrange,
                                   behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
                                   margin: const EdgeInsets.all(16),
                                   duration: const Duration(seconds: 2),
                                 ),
@@ -520,12 +559,16 @@ class _RestaurantDetailState extends State<RestaurantDetail>
                               children: [
                                 Icon(Icons.phone, color: Colors.white),
                                 SizedBox(width: 12),
-                                Text('Ouverture de l\'application téléphone à venir'),
+                                Text(
+                                  'Ouverture de l\'application téléphone à venir',
+                                ),
                               ],
                             ),
-                            backgroundColor: const Color(0xFF10B981),
+                            backgroundColor: AppColors.primaryOrange,
                             behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                             margin: const EdgeInsets.all(16),
                           ),
                         );
@@ -533,7 +576,7 @@ class _RestaurantDetailState extends State<RestaurantDetail>
                       icon: const Icon(Icons.phone),
                       label: const Text('Appeler'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF10B981),
+                        backgroundColor: AppColors.primaryOrange,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         elevation: 0,
@@ -555,7 +598,15 @@ class _RestaurantDetailState extends State<RestaurantDetail>
   bool _isToday(String day) {
     final now = DateTime.now();
     final weekday = now.weekday;
-    final dayName = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'][weekday - 1];
+    final dayName = [
+      'Lundi',
+      'Mardi',
+      'Mercredi',
+      'Jeudi',
+      'Vendredi',
+      'Samedi',
+      'Dimanche',
+    ][weekday - 1];
     return day.toLowerCase().contains(dayName.toLowerCase());
   }
 
@@ -566,18 +617,11 @@ class _RestaurantDetailState extends State<RestaurantDetail>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.restaurant,
-              size: 80,
-              color: Colors.grey[500],
-            ),
+            Icon(Icons.restaurant, size: 80, color: Colors.grey[500]),
             const SizedBox(height: 12),
             Text(
               'Image non disponible',
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 14,
-              ),
+              style: TextStyle(color: Colors.grey[600], fontSize: 14),
             ),
           ],
         ),
@@ -585,18 +629,15 @@ class _RestaurantDetailState extends State<RestaurantDetail>
     }
 
     final picturePath = _pictures[0];
-    
+
     // Check if it's a local file
     if (picturePath.isNotEmpty && !picturePath.startsWith('http')) {
       final file = File(picturePath);
       if (file.existsSync()) {
-        return Image.file(
-          file,
-          fit: BoxFit.cover,
-        );
+        return Image.file(file, fit: BoxFit.cover);
       }
     }
-    
+
     // Try loading as network image
     if (picturePath.startsWith('http')) {
       return Image.network(
@@ -607,18 +648,11 @@ class _RestaurantDetailState extends State<RestaurantDetail>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.broken_image,
-                size: 80,
-                color: Colors.grey[500],
-              ),
+              Icon(Icons.broken_image, size: 80, color: Colors.grey[500]),
               const SizedBox(height: 12),
               Text(
                 'Image non disponible',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 14,
-                ),
+                style: TextStyle(color: Colors.grey[600], fontSize: 14),
               ),
             ],
           ),
@@ -632,18 +666,11 @@ class _RestaurantDetailState extends State<RestaurantDetail>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.restaurant,
-            size: 80,
-            color: Colors.grey[500],
-          ),
+          Icon(Icons.restaurant, size: 80, color: Colors.grey[500]),
           const SizedBox(height: 12),
           Text(
             'Image non disponible',
-            style: TextStyle(
-              color: Colors.grey[600],
-              fontSize: 14,
-            ),
+            style: TextStyle(color: Colors.grey[600], fontSize: 14),
           ),
         ],
       ),
@@ -656,16 +683,10 @@ class _RestaurantDetailState extends State<RestaurantDetail>
         width: 90,
         height: 90,
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF10B981), Color(0xFF059669)],
-          ),
+          gradient: AppColors.gradientPrimary,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: const Icon(
-          Icons.restaurant,
-          color: Colors.white,
-          size: 36,
-        ),
+        child: const Icon(Icons.restaurant, color: Colors.white, size: 36),
       );
     }
 
@@ -675,12 +696,7 @@ class _RestaurantDetailState extends State<RestaurantDetail>
       if (file.existsSync()) {
         return ClipRRect(
           borderRadius: BorderRadius.circular(12),
-          child: Image.file(
-            file,
-            width: 90,
-            height: 90,
-            fit: BoxFit.cover,
-          ),
+          child: Image.file(file, width: 90, height: 90, fit: BoxFit.cover),
         );
       }
     }
@@ -698,9 +714,7 @@ class _RestaurantDetailState extends State<RestaurantDetail>
             width: 90,
             height: 90,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF10B981), Color(0xFF059669)],
-              ),
+              gradient: AppColors.gradientPrimary,
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(
@@ -718,16 +732,10 @@ class _RestaurantDetailState extends State<RestaurantDetail>
       width: 90,
       height: 90,
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF10B981), Color(0xFF059669)],
-        ),
+        gradient: AppColors.gradientPrimary,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: const Icon(
-        Icons.restaurant,
-        color: Colors.white,
-        size: 36,
-      ),
+      child: const Icon(Icons.restaurant, color: Colors.white, size: 36),
     );
   }
 
@@ -741,9 +749,13 @@ class _RestaurantDetailState extends State<RestaurantDetail>
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        backgroundColor: const Color(0xFFF9FAFB),
+        backgroundColor: AppColors.background,
         appBar: AppBar(
-          backgroundColor: const Color(0xFF10B981),
+          flexibleSpace: Container(
+            decoration: const BoxDecoration(
+              gradient: AppColors.gradientPrimary,
+            ),
+          ),
           elevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -755,18 +767,20 @@ class _RestaurantDetailState extends State<RestaurantDetail>
           ),
         ),
         body: const Center(
-          child: CircularProgressIndicator(
-            color: Color(0xFF10B981),
-          ),
+          child: CircularProgressIndicator(color: AppColors.primaryOrange),
         ),
       );
     }
 
     if (_restaurantData == null) {
       return Scaffold(
-        backgroundColor: const Color(0xFFF9FAFB),
+        backgroundColor: AppColors.background,
         appBar: AppBar(
-          backgroundColor: const Color(0xFF10B981),
+          flexibleSpace: Container(
+            decoration: const BoxDecoration(
+              gradient: AppColors.gradientPrimary,
+            ),
+          ),
           elevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -799,16 +813,19 @@ class _RestaurantDetailState extends State<RestaurantDetail>
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF1F2937),
+                  color: AppColors.textPrimary,
                 ),
               ),
               const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: widget.onBack,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF10B981),
+                  backgroundColor: AppColors.primaryOrange,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 16,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -822,14 +839,13 @@ class _RestaurantDetailState extends State<RestaurantDetail>
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
+      backgroundColor: AppColors.background,
       body: CustomScrollView(
         slivers: [
           // Header avec image
           SliverAppBar(
             expandedHeight: 250,
             pinned: true,
-            backgroundColor: const Color(0xFF10B981),
             leading: IconButton(
               icon: Container(
                 padding: const EdgeInsets.all(8),
@@ -844,7 +860,11 @@ class _RestaurantDetailState extends State<RestaurantDetail>
                     ),
                   ],
                 ),
-                child: const Icon(Icons.arrow_back, color: Color(0xFF1F2937), size: 20),
+                child: const Icon(
+                  Icons.arrow_back,
+                  color: AppColors.textPrimary,
+                  size: 20,
+                ),
               ),
               onPressed: widget.onBack,
             ),
@@ -865,7 +885,7 @@ class _RestaurantDetailState extends State<RestaurantDetail>
                   ),
                   child: Icon(
                     _isFavorite ? Icons.favorite : Icons.favorite_border,
-                    color: _isFavorite ? Colors.red : const Color(0xFF1F2937),
+                    color: _isFavorite ? Colors.red : AppColors.textPrimary,
                     size: 20,
                   ),
                 ),
@@ -885,7 +905,11 @@ class _RestaurantDetailState extends State<RestaurantDetail>
                       ),
                     ],
                   ),
-                  child: const Icon(Icons.share, color: Color(0xFF1F2937), size: 20),
+                  child: const Icon(
+                    Icons.share,
+                    color: AppColors.textPrimary,
+                    size: 20,
+                  ),
                 ),
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -897,9 +921,11 @@ class _RestaurantDetailState extends State<RestaurantDetail>
                           Text('Partage à venir'),
                         ],
                       ),
-                      backgroundColor: const Color(0xFF10B981),
+                      backgroundColor: AppColors.primaryOrange,
                       behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       margin: const EdgeInsets.all(16),
                     ),
                   );
@@ -950,9 +976,12 @@ class _RestaurantDetailState extends State<RestaurantDetail>
                         Row(
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
-                                color: Colors.amber,
+                                color: AppColors.primaryYellow,
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Row(
@@ -993,7 +1022,10 @@ class _RestaurantDetailState extends State<RestaurantDetail>
                             ),
                             const SizedBox(width: 12),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.white.withOpacity(0.2),
                                 borderRadius: BorderRadius.circular(6),
@@ -1031,8 +1063,8 @@ class _RestaurantDetailState extends State<RestaurantDetail>
                           onTap: () => _showAddressModal(),
                           child: _QuickInfoCard(
                             icon: Icons.location_on,
-                            label: _restaurantAddress.isNotEmpty 
-                                ? _restaurantAddress.split(',').first 
+                            label: _restaurantAddress.isNotEmpty
+                                ? _restaurantAddress.split(',').first
                                 : 'Adresse',
                           ),
                         ),
@@ -1041,7 +1073,7 @@ class _RestaurantDetailState extends State<RestaurantDetail>
                       Expanded(
                         child: GestureDetector(
                           onTap: () => _showOpeningHoursModal(),
-                          child: _QuickInfoCard(
+                          child: const _QuickInfoCard(
                             icon: Icons.access_time,
                             label: 'Ouvert',
                           ),
@@ -1051,7 +1083,7 @@ class _RestaurantDetailState extends State<RestaurantDetail>
                       Expanded(
                         child: GestureDetector(
                           onTap: () => _showPhoneModal(),
-                          child: _QuickInfoCard(
+                          child: const _QuickInfoCard(
                             icon: Icons.phone,
                             label: 'Appeler',
                           ),
@@ -1077,20 +1109,18 @@ class _RestaurantDetailState extends State<RestaurantDetail>
                     child: TabBar(
                       controller: _tabController,
                       indicator: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF10B981), Color(0xFF059669)],
-                        ),
+                        gradient: AppColors.gradientPrimary,
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF10B981).withOpacity(0.3),
+                            color: AppColors.primaryOrange.withOpacity(0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
                         ],
                       ),
                       labelColor: Colors.white,
-                      unselectedLabelColor: const Color(0xFF6B7280),
+                      unselectedLabelColor: AppColors.textSecondary,
                       labelStyle: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 15,
@@ -1112,10 +1142,7 @@ class _RestaurantDetailState extends State<RestaurantDetail>
                     height: 600,
                     child: TabBarView(
                       controller: _tabController,
-                      children: [
-                        _buildMenuTab(),
-                        _buildReviewsTab(),
-                      ],
+                      children: [_buildMenuTab(), _buildReviewsTab()],
                     ),
                   ),
                 ],
@@ -1136,13 +1163,11 @@ class _RestaurantDetailState extends State<RestaurantDetail>
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF10B981), Color(0xFF059669)],
-                ),
+                gradient: AppColors.gradientPrimary,
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF10B981).withOpacity(0.3),
+                    color: AppColors.primaryOrange.withOpacity(0.3),
                     blurRadius: 20,
                     offset: const Offset(0, 8),
                   ),
@@ -1160,16 +1185,13 @@ class _RestaurantDetailState extends State<RestaurantDetail>
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF1F2937),
+                color: AppColors.textPrimary,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               'Le menu sera bientôt disponible',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
             ),
           ],
         ),
@@ -1185,9 +1207,7 @@ class _RestaurantDetailState extends State<RestaurantDetail>
         final dishPrice = (dish['price'] as num?)?.toDouble() ?? 0.0;
         final dishPreparationTime = dish['preparation_time'] as String? ?? '';
         final dishPictures = (dish['pictures'] as List<dynamic>).cast<String>();
-        final dishImage = dishPictures.isNotEmpty 
-            ? dishPictures[0] 
-            : '';
+        final dishImage = dishPictures.isNotEmpty ? dishPictures[0] : '';
 
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
@@ -1216,21 +1236,24 @@ class _RestaurantDetailState extends State<RestaurantDetail>
                         style: const TextStyle(
                           fontSize: 17,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF1F2937),
+                          color: AppColors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 6),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF10B981).withOpacity(0.1),
+                          color: AppColors.primaryOrange.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
                           dishCategory,
                           style: const TextStyle(
                             fontSize: 12,
-                            color: Color(0xFF10B981),
+                            color: AppColors.primaryOrange,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -1242,14 +1265,14 @@ class _RestaurantDetailState extends State<RestaurantDetail>
                             const Icon(
                               Icons.access_time,
                               size: 14,
-                              color: Color(0xFF6B7280),
+                              color: AppColors.textSecondary,
                             ),
                             const SizedBox(width: 4),
                             Text(
                               dishPreparationTime,
                               style: const TextStyle(
                                 fontSize: 12,
-                                color: Color(0xFF6B7280),
+                                color: AppColors.textSecondary,
                               ),
                             ),
                           ],
@@ -1257,11 +1280,12 @@ class _RestaurantDetailState extends State<RestaurantDetail>
                       ],
                       const SizedBox(height: 12),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF10B981), Color(0xFF059669)],
-                          ),
+                          gradient: AppColors.gradientPrimary,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -1327,23 +1351,17 @@ class _QuickInfoCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF10B981), Color(0xFF059669)],
-                ),
+                gradient: AppColors.gradientPrimary,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(
-                icon,
-                color: Colors.white,
-                size: 20,
-              ),
+              child: Icon(icon, color: Colors.white, size: 20),
             ),
             const SizedBox(height: 8),
             Text(
               label,
               style: const TextStyle(
                 fontSize: 11,
-                color: Color(0xFF6B7280),
+                color: AppColors.textSecondary,
                 fontWeight: FontWeight.w600,
               ),
               textAlign: TextAlign.center,

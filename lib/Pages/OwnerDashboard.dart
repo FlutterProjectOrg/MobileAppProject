@@ -4,6 +4,7 @@ import 'package:mobile_app_project/services/Auth/auth_service.dart';
 import 'package:mobile_app_project/Pages/AddRestaurantModal.dart';
 import 'package:mobile_app_project/Pages/RestaurantDetailOwner.dart';
 import 'package:mobile_app_project/services/Restaurant/RestaurantService.dart';
+import 'package:mobile_app_project/Pages/UI/AppColors.dart';
 
 class OwnerDashboard extends StatefulWidget {
   const OwnerDashboard({Key? key}) : super(key: key);
@@ -75,8 +76,10 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
   Future<void> _loadRestaurants(int ownerId) async {
     try {
       // Fetch restaurants from local SQLite database
-      final data = await RestaurantService.instance.getRestaurantsByOwner(ownerId);
-      
+      final data = await RestaurantService.instance.getRestaurantsByOwner(
+        ownerId,
+      );
+
       if (mounted) {
         setState(() {
           _restaurants = data.map((json) => Restaurant.fromJson(json)).toList();
@@ -118,16 +121,20 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFFF5F5F5),
+      color: AppColors.background,
       child: Column(
         children: [
           _buildHeader(),
           Expanded(
             child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? const Center(
+                    child: CircularProgressIndicator(
+                      color: AppColors.primaryOrange,
+                    ),
+                  )
                 : _restaurants.isEmpty
-                    ? _buildEmptyState()
-                    : _buildRestaurantList(),
+                ? _buildEmptyState()
+                : _buildRestaurantList(),
           ),
         ],
       ),
@@ -142,13 +149,11 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF10B981), Color(0xFF059669)],
-              ),
+              gradient: AppColors.gradientPrimary,
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF10B981).withOpacity(0.3),
+                  color: AppColors.primaryOrange.withOpacity(0.3),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),
@@ -166,19 +171,16 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
             style: const TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF1F2937),
+              color: AppColors.textPrimary,
             ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: Text(
+            child: const Text(
               'Vous n\'avez pas encore de restaurants',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
               textAlign: TextAlign.center,
             ),
           ),
@@ -188,7 +190,7 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
             icon: const Icon(Icons.add),
             label: const Text('Ajouter un restaurant'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF10B981),
+              backgroundColor: AppColors.primaryOrange,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               shape: RoundedRectangleBorder(
@@ -209,13 +211,11 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
           margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF10B981), Color(0xFF059669)],
-            ),
+            gradient: AppColors.gradientPrimary,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF10B981).withOpacity(0.2),
+                color: AppColors.primaryOrange.withOpacity(0.2),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -261,12 +261,15 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF1F2937),
+                  color: AppColors.textPrimary,
                 ),
               ),
               IconButton(
                 onPressed: _showAddRestaurantModal,
-                icon: const Icon(Icons.add_circle, color: Color(0xFF10B981)),
+                icon: const Icon(
+                  Icons.add_circle,
+                  color: AppColors.primaryOrange,
+                ),
                 iconSize: 32,
               ),
             ],
@@ -306,16 +309,19 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => RestaurantDetailOwner(restaurantId: restaurant.id),
-              ),
-            ).then((_) {
-              // Refresh the list when returning from detail screen
-              if (_ownerId != null) {
-                _loadRestaurants(_ownerId!);
-              }
-            });
+            Navigator.of(context)
+                .push(
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        RestaurantDetailOwner(restaurantId: restaurant.id),
+                  ),
+                )
+                .then((_) {
+                  // Refresh the list when returning from detail screen
+                  if (_ownerId != null) {
+                    _loadRestaurants(_ownerId!);
+                  }
+                });
           },
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -325,9 +331,7 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF10B981), Color(0xFF059669)],
-                    ),
+                    gradient: AppColors.gradientPrimary,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(
@@ -347,24 +351,24 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF1F2937),
+                          color: AppColors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.location_on,
                             size: 14,
-                            color: Colors.grey[600],
+                            color: AppColors.textSecondary,
                           ),
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
                               restaurant.adresse,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 14,
-                                color: Colors.grey[600],
+                                color: AppColors.textSecondary,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -378,7 +382,7 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
                 // Arrow
                 Icon(
                   Icons.chevron_right,
-                  color: Colors.grey[400],
+                  color: AppColors.textSecondary.withOpacity(0.4),
                   size: 24,
                 ),
               ],
@@ -391,19 +395,17 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
 
   Widget _buildHeader() {
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF10B981), Color(0xFF059669)],
-        ),
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        gradient: AppColors.gradientPrimary,
+        borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(32),
           bottomRight: Radius.circular(32),
         ),
         boxShadow: [
           BoxShadow(
-            color: Color(0x1A000000),
+            color: AppColors.primaryOrange.withOpacity(0.2),
             blurRadius: 10,
-            offset: Offset(0, 4),
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -428,10 +430,7 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
                   SizedBox(height: 8),
                   Text(
                     'Gérez vos restaurants et plats',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(color: Colors.white70, fontSize: 14),
                   ),
                 ],
               ),
