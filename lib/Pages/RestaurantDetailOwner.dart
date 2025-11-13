@@ -1320,44 +1320,44 @@ class _RestaurantDetailOwnerState extends State<RestaurantDetailOwner> {
                   context: context,
                   builder: (context) => ConfirmDeleteDialog(
                     title: 'Supprimer le plat',
-                    content: 'Êtes-vous sûr de vouloir supprimer "${dish.name}" ?',
+                    message: 'Êtes-vous sûr de vouloir supprimer "${dish.name}" ?',
+                    onConfirm: () async {
+                      // This will be called when user confirms
+                      try {
+                        await DishService.instance.deleteDish(dish.id);
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Row(
+                                children: [
+                                  const Icon(Icons.check_circle, color: Colors.white),
+                                  const SizedBox(width: 12),
+                                  Text('${dish.name} supprimé avec succès'),
+                                ],
+                              ),
+                              backgroundColor: Colors.green,
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              margin: const EdgeInsets.all(16),
+                            ),
+                          );
+                          _loadDishes();
+                        }
+                      } catch (e) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Erreur: ${e.toString()}'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      }
+                    },
                   ),
                 );
-                
-                if (confirmed == true && mounted) {
-                  try {
-                    await DishService.instance.deleteDish(dish.id);
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Row(
-                            children: [
-                              const Icon(Icons.check_circle, color: Colors.white),
-                              const SizedBox(width: 12),
-                              Text('${dish.name} supprimé avec succès'),
-                            ],
-                          ),
-                          backgroundColor: Colors.green,
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          margin: const EdgeInsets.all(16),
-                        ),
-                      );
-                      _loadDishes();
-                    }
-                  } catch (e) {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Erreur: ${e.toString()}'),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-                    }
-                  }
-                }
               }
             },
             itemBuilder: (context) => [
