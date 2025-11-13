@@ -5,6 +5,7 @@ import 'package:mobile_app_project/Pages/UI/AppColors.dart';
 import 'package:mobile_app_project/services/Restaurant/RestaurantService.dart';
 import 'package:mobile_app_project/services/Restaurant/DishService.dart';
 import 'package:mobile_app_project/services/Review/ReviewService.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'dart:io';
 
 class RestaurantDetail extends StatefulWidget {
@@ -34,8 +35,11 @@ class _RestaurantDetailState extends State<RestaurantDetail>
   String _restaurantName = '';
   String _restaurantAddress = '';
   String _restaurantPhone = '';
+  String _priceRange = '€€';
   List<String> _pictures = [];
   List<Map<String, dynamic>> _workTime = [];
+  bool _isOpenNow = false;
+  String _openingStatus = 'Fermé';
 
   @override
   void initState() {
@@ -75,6 +79,7 @@ class _RestaurantDetailState extends State<RestaurantDetail>
           _restaurantName = restaurantData['name'] as String;
           _restaurantAddress = restaurantData['adresse'] as String;
           _restaurantPhone = restaurantData['phone'] as String? ?? '';
+          _priceRange = restaurantData['price_range'] as String? ?? '€€';
           _pictures = (restaurantData['pictures'] as List<dynamic>)
               .cast<String>();
           _workTime = (restaurantData['work_time'] as List<dynamic>)
@@ -86,6 +91,7 @@ class _RestaurantDetailState extends State<RestaurantDetail>
           _totalReviews = ratingData != null
               ? (ratingData['total_reviews'] as int?) ?? 0
               : 0;
+          _calculateOpeningStatus();
           _isLoading = false;
         });
       }
@@ -268,6 +274,17 @@ class _RestaurantDetailState extends State<RestaurantDetail>
   }
 
   void _showOpeningHoursModal() {
+    // Map English days to French
+    final dayTranslations = {
+      'Monday': 'Lundi',
+      'Tuesday': 'Mardi',
+      'Wednesday': 'Mercredi',
+      'Thursday': 'Jeudi',
+      'Friday': 'Vendredi',
+      'Saturday': 'Samedi',
+      'Sunday': 'Dimanche',
+    };
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -278,6 +295,7 @@ class _RestaurantDetailState extends State<RestaurantDetail>
           backgroundColor: Colors.white,
           elevation: 10,
           child: Container(
+            constraints: const BoxConstraints(maxWidth: 400),
             padding: const EdgeInsets.all(24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -338,9 +356,21 @@ class _RestaurantDetailState extends State<RestaurantDetail>
                   )
                 else
                   ..._workTime.map((schedule) {
-                    final day = schedule['day'] as String? ?? '';
-                    final hours = schedule['hours'] as String? ?? '';
-                    final isToday = _isToday(day);
+                    final dayEnglish = schedule['day'] as String? ?? '';
+                    final dayFrench = dayTranslations[dayEnglish] ?? dayEnglish;
+                    final openTime = schedule['open_time'] as String? ?? '';
+                    final closeTime = schedule['close_time'] as String? ?? '';
+                    final isClosed = schedule['is_closed'] as bool? ?? false;
+                    final isToday = _isToday(dayEnglish);
+
+                    String hours;
+                    if (isClosed) {
+                      hours = 'Fermé';
+                    } else if (openTime.isNotEmpty && closeTime.isNotEmpty) {
+                      hours = '$openTime - $closeTime';
+                    } else {
+                      hours = 'Non renseigné';
+                    }
 
                     return Container(
                       margin: const EdgeInsets.only(bottom: 8),
@@ -361,26 +391,42 @@ class _RestaurantDetailState extends State<RestaurantDetail>
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            day,
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: isToday
-                                  ? FontWeight.bold
-                                  : FontWeight.w500,
-                              color: isToday
-                                  ? Colors.white
-                                  : AppColors.textPrimary,
-                            ),
+                          Row(
+                            children: [
+                              if (isToday)
+                                Container(
+                                  width: 8,
+                                  height: 8,
+                                  margin: const EdgeInsets.only(right: 8),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.greenAccent,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              Text(
+                                dayFrench,
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: isToday
+                                      ? FontWeight.bold
+                                      : FontWeight.w500,
+                                  color: isToday
+                                      ? Colors.white
+                                      : AppColors.textPrimary,
+                                ),
+                              ),
+                            ],
                           ),
                           Text(
                             hours,
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
-                              color: isToday
-                                  ? Colors.white
-                                  : AppColors.primaryOrange,
+                              color: isClosed
+                                  ? (isToday ? Colors.white70 : Colors.red)
+                                  : (isToday
+                                      ? Colors.white
+                                      : AppColors.primaryOrange),
                             ),
                           ),
                         ],
@@ -551,27 +597,9 @@ class _RestaurantDetailState extends State<RestaurantDetail>
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
-                      onPressed: () {
+                      onPressed: () async {
                         Navigator.of(context).pop();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: const Row(
-                              children: [
-                                Icon(Icons.phone, color: Colors.white),
-                                SizedBox(width: 12),
-                                Text(
-                                  'Ouverture de l\'application téléphone à venir',
-                                ),
-                              ],
-                            ),
-                            backgroundColor: AppColors.primaryOrange,
-                            behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            margin: const EdgeInsets.all(16),
-                          ),
-                        );
+                        await _makePhoneCall(_restaurantPhone);
                       },
                       icon: const Icon(Icons.phone),
                       label: const Text('Appeler'),
@@ -608,6 +636,141 @@ class _RestaurantDetailState extends State<RestaurantDetail>
       'Dimanche',
     ][weekday - 1];
     return day.toLowerCase().contains(dayName.toLowerCase());
+  }
+
+  void _calculateOpeningStatus() {
+    if (_workTime.isEmpty) {
+      _isOpenNow = false;
+      _openingStatus = 'Horaires non disponibles';
+      return;
+    }
+
+    final now = DateTime.now();
+    final dayNames = [
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
+    ];
+    final currentDay = dayNames[now.weekday - 1];
+
+    // Find today's schedule
+    final todaySchedule = _workTime.firstWhere(
+      (schedule) => schedule['day'] == currentDay,
+      orElse: () => {},
+    );
+
+    if (todaySchedule.isEmpty) {
+      _isOpenNow = false;
+      _openingStatus = 'Fermé';
+      return;
+    }
+
+    final isClosed = todaySchedule['is_closed'] as bool? ?? true;
+    if (isClosed) {
+      _isOpenNow = false;
+      _openingStatus = 'Fermé aujourd\'hui';
+      return;
+    }
+
+    final openTime = todaySchedule['open_time'] as String? ?? '';
+    final closeTime = todaySchedule['close_time'] as String? ?? '';
+
+    if (openTime.isEmpty || closeTime.isEmpty) {
+      _isOpenNow = false;
+      _openingStatus = 'Fermé';
+      return;
+    }
+
+    // Parse times
+    try {
+      final openParts = openTime.split(':');
+      final closeParts = closeTime.split(':');
+      
+      final openHour = int.parse(openParts[0]);
+      final openMinute = int.parse(openParts[1]);
+      final closeHour = int.parse(closeParts[0]);
+      final closeMinute = int.parse(closeParts[1]);
+
+      final currentMinutes = now.hour * 60 + now.minute;
+      final openMinutes = openHour * 60 + openMinute;
+      final closeMinutes = closeHour * 60 + closeMinute;
+
+      if (currentMinutes >= openMinutes && currentMinutes < closeMinutes) {
+        _isOpenNow = true;
+        _openingStatus = 'Ouvert jusqu\'à $closeTime';
+      } else if (currentMinutes < openMinutes) {
+        _isOpenNow = false;
+        _openingStatus = 'Ouvre à $openTime';
+      } else {
+        _isOpenNow = false;
+        _openingStatus = 'Fermé';
+      }
+    } catch (e) {
+      debugPrint('Error parsing opening hours: $e');
+      _isOpenNow = false;
+      _openingStatus = 'Fermé';
+    }
+  }
+
+  Future<void> _makePhoneCall(String phoneNumber) async {
+    // Remove all spaces and special characters except + and numbers
+    final cleanNumber = phoneNumber.replaceAll(RegExp(r'[^\d+]'), '');
+    final Uri telUri = Uri(scheme: 'tel', path: cleanNumber);
+    
+    try {
+      if (await canLaunchUrl(telUri)) {
+        await launchUrl(telUri);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Row(
+                children: [
+                  Icon(Icons.error_outline, color: Colors.white),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Text('Impossible d\'ouvrir l\'application téléphone'),
+                  ),
+                ],
+              ),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              margin: const EdgeInsets.all(16),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error launching phone: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text('Erreur: ${e.toString()}'),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.all(16),
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildRestaurantImage() {
@@ -1030,9 +1193,9 @@ class _RestaurantDetailState extends State<RestaurantDetail>
                                 color: Colors.white.withOpacity(0.2),
                                 borderRadius: BorderRadius.circular(6),
                               ),
-                              child: const Text(
-                                '€€',
-                                style: TextStyle(
+                              child: Text(
+                                _priceRange,
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 14,
@@ -1073,9 +1236,10 @@ class _RestaurantDetailState extends State<RestaurantDetail>
                       Expanded(
                         child: GestureDetector(
                           onTap: () => _showOpeningHoursModal(),
-                          child: const _QuickInfoCard(
+                          child: _QuickInfoCard(
                             icon: Icons.access_time,
-                            label: 'Ouvert',
+                            label: _openingStatus,
+                            isOpen: _isOpenNow,
                           ),
                         ),
                       ),
@@ -1326,8 +1490,13 @@ class _RestaurantDetailState extends State<RestaurantDetail>
 class _QuickInfoCard extends StatelessWidget {
   final IconData icon;
   final String label;
+  final bool? isOpen;
 
-  const _QuickInfoCard({required this.icon, required this.label});
+  const _QuickInfoCard({
+    required this.icon,
+    required this.label,
+    this.isOpen,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1348,20 +1517,54 @@ class _QuickInfoCard extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                gradient: AppColors.gradientPrimary,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(icon, color: Colors.white, size: 20),
+            Stack(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    gradient: isOpen == true
+                        ? const LinearGradient(
+                            colors: [Color(0xFF4CAF50), Color(0xFF66BB6A)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          )
+                        : (isOpen == false
+                            ? const LinearGradient(
+                                colors: [Color(0xFFEF5350), Color(0xFFE53935)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              )
+                            : AppColors.gradientPrimary),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(icon, color: Colors.white, size: 20),
+                ),
+                if (isOpen != null)
+                  Positioned(
+                    top: 4,
+                    right: 4,
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: isOpen! ? Colors.greenAccent : Colors.redAccent,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 1.5),
+                      ),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: 8),
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
-                color: AppColors.textSecondary,
+                color: isOpen == true
+                    ? const Color(0xFF4CAF50)
+                    : (isOpen == false
+                        ? const Color(0xFFEF5350)
+                        : AppColors.textSecondary),
                 fontWeight: FontWeight.w600,
               ),
               textAlign: TextAlign.center,

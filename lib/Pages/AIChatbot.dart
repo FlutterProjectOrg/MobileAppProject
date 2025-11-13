@@ -577,9 +577,11 @@ class _AIChatbotState extends State<AIChatbot>
       child: Container(
         color: AppColors.background,
         child: FutureBuilder<List<Map<String, dynamic>>>(
+          key: const ValueKey('chat_history_future'),
           future: _chatHistory.getConversations(),
           builder: (context, snapshot) {
             debugPrint('🎨 FutureBuilder state: ${snapshot.connectionState}');
+            debugPrint('🎨 Has error: ${snapshot.hasError}, Has data: ${snapshot.hasData}');
             
             if (snapshot.connectionState == ConnectionState.waiting) {
               debugPrint('🎨 Showing loading indicator');
@@ -593,6 +595,7 @@ class _AIChatbotState extends State<AIChatbot>
             if (snapshot.hasError) {
               debugPrint('❌ Error loading chat history: ${snapshot.error}');
               debugPrint('❌ Error type: ${snapshot.error.runtimeType}');
+              debugPrint('❌ Stack trace: ${snapshot.stackTrace}');
               return Center(
                 child: Padding(
                   padding: const EdgeInsets.all(24.0),
@@ -694,14 +697,20 @@ class _AIChatbotState extends State<AIChatbot>
               padding: const EdgeInsets.all(16),
               itemCount: conversations.length,
               itemBuilder: (context, index) {
-                final conversation = conversations[index];
-                final conversationId = conversation['id'] as int;
-                final title = conversation['title'] as String;
-                final messageCount = conversation['message_count'] as int;
-                final updatedAt = conversation['updated_at'] as String;
-                final lastMessage = conversation['last_message'] as String?;
-                
-                final isActive = conversationId == _currentConversationId;
+                try {
+                  final conversation = conversations[index];
+                  debugPrint('🔍 Building history item $index: ${conversation.keys}');
+                  
+                  // Safely extract values with defaults
+                  final conversationId = (conversation['id'] as num?)?.toInt() ?? 0;
+                  final title = (conversation['title'] as String?) ?? 'Conversation sans titre';
+                  final messageCount = (conversation['message_count'] as num?)?.toInt() ?? 0;
+                  final updatedAt = (conversation['updated_at'] as String?) ?? DateTime.now().toIso8601String();
+                  final lastMessage = conversation['last_message'] as String?;
+                  
+                  debugPrint('🔍 Parsed: id=$conversationId, title=$title, count=$messageCount');
+                  
+                  final isActive = conversationId == _currentConversationId;
 
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 12),
@@ -710,8 +719,9 @@ class _AIChatbotState extends State<AIChatbot>
                     child: Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        gradient: isActive ? AppColors.gradientPrimary.scale(0.1) : null,
-                        color: isActive ? null : Colors.white,
+                        color: isActive 
+                            ? AppColors.primaryOrange.withOpacity(0.05)
+                            : Colors.white,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                           color: isActive 
@@ -826,6 +836,39 @@ class _AIChatbotState extends State<AIChatbot>
                     ),
                   ),
                 );
+                } catch (e, stackTrace) {
+                  debugPrint('❌ Error building history item $index: $e');
+                  debugPrint('❌ Stack trace: $stackTrace');
+                  debugPrint('❌ Conversation data: ${conversations[index]}');
+                  
+                  // Return a simple error card instead of crashing
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.red.withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.error_outline, color: Colors.red[700]),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Erreur de chargement',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.red[700],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
               },
             );
           },
