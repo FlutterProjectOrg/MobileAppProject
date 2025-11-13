@@ -48,7 +48,7 @@ class _AIChatbotState extends State<AIChatbot>
   void initState() {
     super.initState();
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 200), // Faster animation
       vsync: this,
     );
     _scaleAnimation = CurvedAnimation(
@@ -56,76 +56,82 @@ class _AIChatbotState extends State<AIChatbot>
       curve: Curves.easeOutBack,
     );
     _animationController.forward();
-    _initializeGemini();
+    
+    // Show UI immediately, initialize in background
+    _initializeGeminiQuick();
   }
 
-  Future<void> _initializeGemini() async {
+  /// Quick initialization - defers heavy operations
+  Future<void> _initializeGeminiQuick() async {
+    // Show welcome message immediately
     setState(() {
+      _messages.add(
+        Message(
+          id: 1,
+          text: "Bonjour! Je suis votre assistant culinaire IA. Initialisation en cours...",
+          sender: 'ai',
+        ),
+      );
       _isLoading = true;
     });
 
-    try {
-      // Get API key from .env
-      final apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
-      
-      if (apiKey.isEmpty) {
-        setState(() {
-          _errorMessage = 'La clé API Gemini n\'est pas configurée. Veuillez ajouter GEMINI_API_KEY dans le fichier .env';
-          _isLoading = false;
-          _isInitialized = false;
-        });
-        return;
-      }
-
-      // Initialize Gemini service
-      final success = await _geminiService.initialize(apiKey);
-
-      if (success) {
-        // Start new chat with database context
-        await _geminiService.startNewChat();
-
-        // Create new conversation in database
-        _currentConversationId = await _chatHistory.createConversation();
-
-        const welcomeText = "Bonjour! Je suis votre assistant culinaire IA. Je connais tous les restaurants de notre base de données FoodFinder. Comment puis-je vous aider à trouver le restaurant parfait aujourd'hui?";
+    // Initialize in background without blocking UI
+    Future.microtask(() async {
+      try {
+        final apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
         
-        // Save welcome message to database
-        if (_currentConversationId != null) {
-          await _chatHistory.saveMessage(
-            conversationId: _currentConversationId!,
-            sender: 'ai',
-            message: welcomeText,
-          );
+        if (apiKey.isEmpty) {
+          if (mounted) {
+            setState(() {
+              _errorMessage = 'La clé API Gemini n\'est pas configurée. Veuillez ajouter GEMINI_API_KEY dans le fichier .env';
+              _isLoading = false;
+              _isInitialized = false;
+              _messages.clear();
+            });
+          }
+          return;
         }
 
-        // Add welcome message
-        setState(() {
-          _messages.add(
-            Message(
+        // Initialize Gemini service
+        final success = await _geminiService.initialize(apiKey);
+
+        if (success && mounted) {
+          // Start new chat
+          await _geminiService.startNewChat();
+
+          const welcomeText = "Bonjour! Je suis votre assistant culinaire IA. Je connais tous les restaurants de notre base de données FoodFinder. Comment puis-je vous aider à trouver le restaurant parfait aujourd'hui?";
+          
+          // Update welcome message
+          setState(() {
+            _messages[0] = Message(
               id: 1,
               text: welcomeText,
               sender: 'ai',
               suggestions: _geminiService.getSuggestedQuestions(),
-            ),
-          );
-          _isInitialized = true;
-          _isLoading = false;
-        });
-      } else {
-        setState(() {
-          _errorMessage = 'Impossible d\'initialiser le service Gemini. Vérifiez votre clé API.';
-          _isLoading = false;
-          _isInitialized = false;
-        });
+            );
+            _isInitialized = true;
+            _isLoading = false;
+          });
+        } else if (mounted) {
+          setState(() {
+            _errorMessage = 'Impossible d\'initialiser le service Gemini. Vérifiez votre clé API.';
+            _isLoading = false;
+            _isInitialized = false;
+            _messages.clear();
+          });
+        }
+      } catch (e) {
+        debugPrint('Error initializing Gemini: $e');
+        if (mounted) {
+          setState(() {
+            _errorMessage = 'Erreur: ${e.toString()}';
+            _isLoading = false;
+            _isInitialized = false;
+            _messages.clear();
+          });
+        }
       }
-    } catch (e) {
-      debugPrint('Error initializing Gemini: $e');
-      setState(() {
-        _errorMessage = 'Erreur: ${e.toString()}';
-        _isLoading = false;
-        _isInitialized = false;
-      });
-    }
+    });
   }
 
   @override
@@ -158,19 +164,31 @@ class _AIChatbotState extends State<AIChatbot>
       _isLoading = true;
     });
 
-    // Save user message to database
-    if (_currentConversationId != null) {
-      await _chatHistory.saveMessage(
-        conversationId: _currentConversationId!,
-        sender: 'user',
-        message: messageText,
-      );
+    // Create conversation on first user message (lazy initialization)
+    if (_currentConversationId == null) {
+      _currentConversationId = await _chatHistory.createConversation();
       
-      // Update conversation title with first user message
-      if (_messages.where((m) => m.sender == 'user').length == 1) {
-        final title = _chatHistory.generateTitle(messageText);
-        await _chatHistory.updateConversationTitle(_currentConversationId!, title);
+      // Save welcome message retroactively
+      if (_messages.isNotEmpty && _messages.first.sender == 'ai') {
+        await _chatHistory.saveMessage(
+          conversationId: _currentConversationId!,
+          sender: 'ai',
+          message: _messages.first.text,
+        );
       }
+    }
+
+    // Save user message to database
+    await _chatHistory.saveMessage(
+      conversationId: _currentConversationId!,
+      sender: 'user',
+      message: messageText,
+    );
+    
+    // Update conversation title with first user message
+    if (_messages.where((m) => m.sender == 'user').length == 1) {
+      final title = _chatHistory.generateTitle(messageText);
+      await _chatHistory.updateConversationTitle(_currentConversationId!, title);
     }
 
     _textController.clear();
@@ -297,10 +315,37 @@ class _AIChatbotState extends State<AIChatbot>
   Future<void> _startNewConversation() async {
     setState(() {
       _showHistory = false;
+      _messages.clear();
+      _currentConversationId = null;
+      _isLoading = true;
     });
     
-    // Reinitialize to start fresh
-    _initializeGemini();
+    // Quick reinitialize
+    try {
+      await _geminiService.startNewChat();
+      
+      const welcomeText = "Bonjour! Je suis votre assistant culinaire IA. Je connais tous les restaurants de notre base de données FoodFinder. Comment puis-je vous aider à trouver le restaurant parfait aujourd'hui?";
+      
+      setState(() {
+        _messages.add(
+          Message(
+            id: 1,
+            text: welcomeText,
+            sender: 'ai',
+            suggestions: _geminiService.getSuggestedQuestions(),
+          ),
+        );
+        _isInitialized = true;
+        _isLoading = false;
+      });
+    } catch (e) {
+      debugPrint('Error starting new conversation: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   /// Delete a conversation
@@ -827,8 +872,9 @@ class _AIChatbotState extends State<AIChatbot>
               onPressed: () {
                 setState(() {
                   _errorMessage = null;
+                  _messages.clear();
                 });
-                _initializeGemini();
+                _initializeGeminiQuick();
               },
               icon: const Icon(Icons.refresh),
               label: const Text('Réessayer'),

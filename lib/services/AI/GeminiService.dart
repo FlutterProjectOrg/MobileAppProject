@@ -13,10 +13,18 @@ class GeminiService {
   GenerativeModel? _model;
   ChatSession? _chatSession;
   bool _isInitialized = false;
+  Map<String, dynamic>? _cachedContextData;
+  DateTime? _lastContextUpdate;
 
   /// Initialize the Gemini model with API key
   Future<bool> initialize(String apiKey) async {
     try {
+      // Skip if already initialized with the same config
+      if (_isInitialized && _model != null) {
+        debugPrint('✅ Gemini service already initialized');
+        return true;
+      }
+
       if (apiKey.isEmpty) {
         debugPrint('❌ Gemini API key is empty');
         return false;
@@ -56,6 +64,13 @@ class GeminiService {
   /// Check if the service is initialized
   bool get isInitialized => _isInitialized;
 
+  /// Clear cached context data to force refresh
+  void clearContextCache() {
+    _cachedContextData = null;
+    _lastContextUpdate = null;
+    debugPrint('🗑️ Context cache cleared');
+  }
+
   /// Start a new chat session with context from database
   Future<void> startNewChat() async {
     if (!_isInitialized || _model == null) {
@@ -84,15 +99,26 @@ class GeminiService {
     }
   }
 
-  /// Get context data from database
+  /// Get context data from database (with caching)
   Future<Map<String, dynamic>> _getContextData() async {
     try {
+      // Use cached data if available and fresh (< 5 minutes old)
+      if (_cachedContextData != null && _lastContextUpdate != null) {
+        final age = DateTime.now().difference(_lastContextUpdate!);
+        if (age.inMinutes < 5) {
+          debugPrint('✅ Using cached context data');
+          return _cachedContextData!;
+        }
+      }
+
+      debugPrint('🔄 Fetching fresh context data...');
+      
       // Get restaurants with ratings
       final restaurants = await ReviewService.instance.getRestaurantsWithRatings();
 
-      // Get all dishes
+      // Get all dishes (limit to avoid too much data)
       final allDishes = <Map<String, dynamic>>[];
-      for (final restaurant in restaurants) {
+      for (final restaurant in restaurants.take(20)) { // Limit to first 20 restaurants
         final dishes = await DishService.instance.getDishesByRestaurant(
           restaurant['id'] as int,
         );
@@ -117,7 +143,7 @@ class GeminiService {
       // Get top rated restaurants
       final topRated = await ReviewService.instance.getTopRatedRestaurants(limit: 5);
 
-      return {
+      final contextData = {
         'total_restaurants': restaurants.length,
         'restaurants': restaurants.map((r) => {
           'id': r['id'],
@@ -143,6 +169,13 @@ class GeminiService {
         }).toList(),
         'user_preferences': userPreferences,
       };
+
+      // Cache the data
+      _cachedContextData = contextData;
+      _lastContextUpdate = DateTime.now();
+      debugPrint('✅ Context data cached');
+
+      return contextData;
     } catch (e) {
       debugPrint('❌ Error getting context data: $e');
       return {
