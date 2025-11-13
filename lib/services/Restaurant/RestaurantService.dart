@@ -15,6 +15,8 @@ class RestaurantService {
     final workTime = (data['work_time'] as List?) ?? [];
     final cuisine = data['cuisine'] as String? ?? 'Autre';
     final priceRange = data['price_range'] as String? ?? '€€';
+    final latitude = data['latitude'] as double?;
+    final longitude = data['longitude'] as double?;
 
     final picsJson = jsonEncode(pictures);
     final wtJson = jsonEncode(workTime);
@@ -28,6 +30,8 @@ class RestaurantService {
       'owner_id': ownerId,
       'cuisine': cuisine,
       'price_range': priceRange,
+      if (latitude != null) 'latitude': latitude,
+      if (longitude != null) 'longitude': longitude,
     });
     return id;
   }
@@ -76,6 +80,8 @@ class RestaurantService {
         'work_time': wtJson,
         if (data.containsKey('cuisine')) 'cuisine': data['cuisine'],
         if (data.containsKey('price_range')) 'price_range': data['price_range'],
+        if (data.containsKey('latitude')) 'latitude': data['latitude'],
+        if (data.containsKey('longitude')) 'longitude': data['longitude'],
       },
       where: 'id = ?',
       whereArgs: [id],
@@ -102,6 +108,8 @@ class RestaurantService {
       'owner_id': row['owner_id'],
       'cuisine': row['cuisine'] ?? 'Autre',
       'price_range': row['price_range'] ?? '€€',
+      'latitude': row['latitude'] as double?,
+      'longitude': row['longitude'] as double?,
     };
   }
 }

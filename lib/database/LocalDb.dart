@@ -15,7 +15,7 @@ class LocalDb {
 
     _db = await openDatabase(
       path,
-      version: 7,
+      version: 8,
       onCreate: (db, version) async {
         await db.execute("""
           CREATE TABLE users (
@@ -69,6 +69,8 @@ class LocalDb {
             owner_id INTEGER NOT NULL,
             cuisine TEXT DEFAULT 'Autre',
             price_range TEXT DEFAULT '€€',
+            latitude REAL,
+            longitude REAL,
             FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
           )
         """);
@@ -243,6 +245,23 @@ class LocalDb {
           if (!restaurantColNames.contains('price_range')) {
             await db.execute(
               "ALTER TABLE restaurants ADD COLUMN price_range TEXT DEFAULT '€€'",
+            );
+          }
+        }
+        
+        // Migration for version 8: Add latitude and longitude to restaurants
+        if (oldV < 8) {
+          final restaurantCols = await db.rawQuery("PRAGMA table_info(restaurants)");
+          final restaurantColNames = restaurantCols.map((e) => e['name']).toSet();
+          
+          if (!restaurantColNames.contains('latitude')) {
+            await db.execute(
+              "ALTER TABLE restaurants ADD COLUMN latitude REAL",
+            );
+          }
+          if (!restaurantColNames.contains('longitude')) {
+            await db.execute(
+              "ALTER TABLE restaurants ADD COLUMN longitude REAL",
             );
           }
         }
