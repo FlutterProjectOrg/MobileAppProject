@@ -50,10 +50,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _onSearchChanged() {
-    setState(() {
-      _searchQuery = _searchController.text;
-      _applyFilters();
-    });
+    _searchQuery = _searchController.text;
+    _applyFilters();
   }
 
   Future<void> _loadRestaurants() async {
@@ -288,6 +286,11 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             child: TextField(
               controller: _searchController,
+              textInputAction: TextInputAction.search,
+              style: const TextStyle(
+                fontSize: 16,
+                color: AppColors.textPrimary,
+              ),
               decoration: InputDecoration(
                 hintText: 'Rechercher un restaurant, cuisine...',
                 hintStyle: TextStyle(
@@ -297,6 +300,18 @@ class _HomeScreenState extends State<HomeScreen> {
                   Icons.search,
                   color: AppColors.primaryOrange,
                 ),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(
+                          Icons.clear,
+                          color: AppColors.textSecondary,
+                        ),
+                        onPressed: () {
+                          _searchController.clear();
+                          // _onSearchChanged will be called automatically
+                        },
+                      )
+                    : null,
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 20,
