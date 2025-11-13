@@ -15,7 +15,7 @@ class LocalDb {
 
     _db = await openDatabase(
       path,
-      version: 5,
+      version: 6,
       onCreate: (db, version) async {
         await db.execute("""
           CREATE TABLE users (
@@ -110,6 +110,26 @@ class LocalDb {
             FOREIGN KEY (restaurant_id) REFERENCES restaurants(id) ON DELETE CASCADE
           )
         """);
+        await db.execute("""
+          CREATE TABLE chat_conversations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            title TEXT DEFAULT 'Nouvelle conversation',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+          )
+        """);
+        await db.execute("""
+          CREATE TABLE chat_messages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            conversation_id INTEGER NOT NULL,
+            sender TEXT NOT NULL CHECK (sender IN ('user', 'ai')),
+            message TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (conversation_id) REFERENCES chat_conversations(id) ON DELETE CASCADE
+          )
+        """);
       },
       onUpgrade: (db, oldV, newV) async {
         // Migration for version 4: Add price and preparation_time to dishes
@@ -164,6 +184,45 @@ class LocalDb {
                 average_rating REAL DEFAULT 0.0,
                 total_reviews INTEGER DEFAULT 0,
                 FOREIGN KEY (restaurant_id) REFERENCES restaurants(id) ON DELETE CASCADE
+              )
+            """);
+          }
+        }
+        
+        // Migration for version 6: Add chat conversations and messages tables
+        if (oldV < 6) {
+          // Check if chat_conversations table exists
+          final chatTables = await db.rawQuery(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='chat_conversations'",
+          );
+          
+          if (chatTables.isEmpty) {
+            await db.execute("""
+              CREATE TABLE chat_conversations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER,
+                title TEXT DEFAULT 'Nouvelle conversation',
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+              )
+            """);
+          }
+          
+          // Check if chat_messages table exists
+          final messageTables = await db.rawQuery(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='chat_messages'",
+          );
+          
+          if (messageTables.isEmpty) {
+            await db.execute("""
+              CREATE TABLE chat_messages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                conversation_id INTEGER NOT NULL,
+                sender TEXT NOT NULL CHECK (sender IN ('user', 'ai')),
+                message TEXT NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (conversation_id) REFERENCES chat_conversations(id) ON DELETE CASCADE
               )
             """);
           }

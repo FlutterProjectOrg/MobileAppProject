@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:mobile_app_project/Pages/UI/AppColors.dart';
 import 'package:mobile_app_project/services/AI/GeminiService.dart';
+import 'package:mobile_app_project/services/AI/ChatHistoryService.dart';
+import 'package:intl/intl.dart';
 
 class Message {
   final int id;
@@ -33,11 +35,14 @@ class _AIChatbotState extends State<AIChatbot>
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
   final GeminiService _geminiService = GeminiService.instance;
+  final ChatHistoryService _chatHistory = ChatHistoryService.instance;
 
   final List<Message> _messages = [];
   bool _isLoading = false;
   bool _isInitialized = false;
   String? _errorMessage;
+  int? _currentConversationId;
+  bool _showHistory = false;
 
   @override
   void initState() {
@@ -79,12 +84,26 @@ class _AIChatbotState extends State<AIChatbot>
         // Start new chat with database context
         await _geminiService.startNewChat();
 
+        // Create new conversation in database
+        _currentConversationId = await _chatHistory.createConversation();
+
+        const welcomeText = "Bonjour! Je suis votre assistant culinaire IA. Je connais tous les restaurants de notre base de données FoodFinder. Comment puis-je vous aider à trouver le restaurant parfait aujourd'hui?";
+        
+        // Save welcome message to database
+        if (_currentConversationId != null) {
+          await _chatHistory.saveMessage(
+            conversationId: _currentConversationId!,
+            sender: 'ai',
+            message: welcomeText,
+          );
+        }
+
         // Add welcome message
         setState(() {
           _messages.add(
             Message(
               id: 1,
-              text: "Bonjour! Je suis votre assistant culinaire IA. Je connais tous les restaurants de notre base de données FoodFinder. Comment puis-je vous aider à trouver le restaurant parfait aujourd'hui?",
+              text: welcomeText,
               sender: 'ai',
               suggestions: _geminiService.getSuggestedQuestions(),
             ),
@@ -139,6 +158,21 @@ class _AIChatbotState extends State<AIChatbot>
       _isLoading = true;
     });
 
+    // Save user message to database
+    if (_currentConversationId != null) {
+      await _chatHistory.saveMessage(
+        conversationId: _currentConversationId!,
+        sender: 'user',
+        message: messageText,
+      );
+      
+      // Update conversation title with first user message
+      if (_messages.where((m) => m.sender == 'user').length == 1) {
+        final title = _chatHistory.generateTitle(messageText);
+        await _chatHistory.updateConversationTitle(_currentConversationId!, title);
+      }
+    }
+
     _textController.clear();
 
     // Scroll to bottom after user message
@@ -147,6 +181,15 @@ class _AIChatbotState extends State<AIChatbot>
     try {
       // Get AI response
       final response = await _geminiService.sendMessage(messageText);
+
+      // Save AI response to database
+      if (_currentConversationId != null) {
+        await _chatHistory.saveMessage(
+          conversationId: _currentConversationId!,
+          sender: 'ai',
+          message: response,
+        );
+      }
 
       // Add AI response
       setState(() {
@@ -165,11 +208,22 @@ class _AIChatbotState extends State<AIChatbot>
       _scrollToBottom();
     } catch (e) {
       debugPrint('Error getting AI response: $e');
+      const errorText = 'Désolé, une erreur s\'est produite. Veuillez réessayer.';
+      
+      // Save error message to database
+      if (_currentConversationId != null) {
+        await _chatHistory.saveMessage(
+          conversationId: _currentConversationId!,
+          sender: 'ai',
+          message: errorText,
+        );
+      }
+      
       setState(() {
         _messages.add(
           Message(
             id: _messages.length + 1,
-            text: 'Désolé, une erreur s\'est produite. Veuillez réessayer.',
+            text: errorText,
             sender: 'ai',
           ),
         );
@@ -198,6 +252,71 @@ class _AIChatbotState extends State<AIChatbot>
 
   void _handleSuggestionClick(String suggestion) {
     _handleSend(suggestion);
+  }
+
+  /// Load a previous conversation
+  Future<void> _loadConversation(int conversationId) async {
+    setState(() {
+      _isLoading = true;
+      _showHistory = false;
+    });
+
+    try {
+      // Get messages from database
+      final messagesData = await _chatHistory.getMessages(conversationId);
+      
+      // Start new Gemini chat
+      await _geminiService.startNewChat();
+      
+      // Convert to Message objects
+      final messages = messagesData.map((data) {
+        return Message(
+          id: data['id'] as int,
+          text: data['message'] as String,
+          sender: data['sender'] as String,
+        );
+      }).toList();
+
+      setState(() {
+        _currentConversationId = conversationId;
+        _messages.clear();
+        _messages.addAll(messages);
+        _isLoading = false;
+      });
+
+      _scrollToBottom();
+    } catch (e) {
+      debugPrint('Error loading conversation: $e');
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  /// Start a new conversation
+  Future<void> _startNewConversation() async {
+    setState(() {
+      _showHistory = false;
+    });
+    
+    // Reinitialize to start fresh
+    _initializeGemini();
+  }
+
+  /// Delete a conversation
+  Future<void> _deleteConversation(int conversationId) async {
+    try {
+      await _chatHistory.deleteConversation(conversationId);
+      
+      // If we're currently viewing this conversation, start a new one
+      if (_currentConversationId == conversationId) {
+        _startNewConversation();
+      } else {
+        setState(() {}); // Refresh history list
+      }
+    } catch (e) {
+      debugPrint('Error deleting conversation: $e');
+    }
   }
 
   @override
@@ -234,8 +353,12 @@ class _AIChatbotState extends State<AIChatbot>
                 child: Column(
                   children: [
                     _buildHeader(),
-                    _buildMessagesList(),
-                    _buildInputArea(),
+                    if (_showHistory)
+                      _buildHistoryPanel()
+                    else ...[
+                      _buildMessagesList(),
+                      _buildInputArea(),
+                    ],
                   ],
                 ),
               ),
@@ -314,6 +437,37 @@ class _AIChatbotState extends State<AIChatbot>
               ],
             ),
           ),
+          // New Chat button
+          GestureDetector(
+            onTap: _startNewConversation,
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.add, color: Colors.white, size: 20),
+            ),
+          ),
+          const SizedBox(width: 8),
+          // History button
+          GestureDetector(
+            onTap: () => setState(() => _showHistory = !_showHistory),
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: _showHistory 
+                    ? Colors.white.withOpacity(0.3)
+                    : Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.history, color: Colors.white, size: 20),
+            ),
+          ),
+          const SizedBox(width: 8),
+          // Close button
           GestureDetector(
             onTap: widget.onClose,
             child: Container(
@@ -325,6 +479,279 @@ class _AIChatbotState extends State<AIChatbot>
               ),
               child: const Icon(Icons.close, color: Colors.white, size: 20),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHistoryPanel() {
+    return Expanded(
+      child: Container(
+        color: AppColors.background,
+        child: FutureBuilder<List<Map<String, dynamic>>>(
+          future: _chatHistory.getConversations(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(
+                child: CircularProgressIndicator(
+                  color: AppColors.primaryOrange,
+                ),
+              );
+            }
+
+            if (snapshot.hasError) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: Colors.grey,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Erreur lors du chargement',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            final conversations = snapshot.data ?? [];
+
+            if (conversations.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.chat_bubble_outline,
+                      size: 64,
+                      color: Colors.grey[400],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Aucune conversation',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Commencez une nouvelle conversation',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[500],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            return ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: conversations.length,
+              itemBuilder: (context, index) {
+                final conversation = conversations[index];
+                final conversationId = conversation['id'] as int;
+                final title = conversation['title'] as String;
+                final messageCount = conversation['message_count'] as int;
+                final updatedAt = conversation['updated_at'] as String;
+                final lastMessage = conversation['last_message'] as String?;
+                
+                final isActive = conversationId == _currentConversationId;
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: GestureDetector(
+                    onTap: () => _loadConversation(conversationId),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        gradient: isActive ? AppColors.gradientPrimary.scale(0.1) : null,
+                        color: isActive ? null : Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: isActive 
+                              ? AppColors.primaryOrange
+                              : Colors.grey.withOpacity(0.2),
+                          width: isActive ? 2 : 1,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: isActive
+                                ? AppColors.primaryOrange.withOpacity(0.2)
+                                : Colors.black.withOpacity(0.05),
+                            blurRadius: isActive ? 10 : 5,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              gradient: isActive 
+                                  ? AppColors.gradientPrimary
+                                  : null,
+                              color: isActive 
+                                  ? null 
+                                  : AppColors.primaryOrange.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(
+                              Icons.chat_bubble_outline,
+                              color: isActive 
+                                  ? Colors.white 
+                                  : AppColors.primaryOrange,
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  title,
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: isActive 
+                                        ? FontWeight.bold 
+                                        : FontWeight.w600,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 4),
+                                if (lastMessage != null)
+                                  Text(
+                                    lastMessage,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.grey[600],
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.message,
+                                      size: 14,
+                                      color: Colors.grey[500],
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '$messageCount message${messageCount > 1 ? 's' : ''}',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey[500],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Icon(
+                                      Icons.access_time,
+                                      size: 14,
+                                      color: Colors.grey[500],
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      _formatDate(updatedAt),
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey[500],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            icon: Icon(
+                              Icons.delete_outline,
+                              color: Colors.grey[600],
+                            ),
+                            onPressed: () => _showDeleteConfirmation(conversationId),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  String _formatDate(String dateStr) {
+    try {
+      final date = DateTime.parse(dateStr);
+      final now = DateTime.now();
+      final difference = now.difference(date);
+
+      if (difference.inMinutes < 1) {
+        return 'À l\'instant';
+      } else if (difference.inHours < 1) {
+        return '${difference.inMinutes}m';
+      } else if (difference.inDays < 1) {
+        return '${difference.inHours}h';
+      } else if (difference.inDays < 7) {
+        return '${difference.inDays}j';
+      } else {
+        return DateFormat('dd/MM/yy').format(date);
+      }
+    } catch (e) {
+      return '';
+    }
+  }
+
+  void _showDeleteConfirmation(int conversationId) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: const Text('Supprimer la conversation ?'),
+        content: const Text(
+          'Cette action est irréversible. Toutes les messages seront supprimés.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _deleteConversation(conversationId);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text('Supprimer'),
           ),
         ],
       ),
