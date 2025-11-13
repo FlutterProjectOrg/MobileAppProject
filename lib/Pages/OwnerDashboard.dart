@@ -31,66 +31,87 @@ class Restaurant {
 
 class _OwnerDashboardState extends State<OwnerDashboard> {
   final _authService = LocalAuthService.instance;
-  String _ownerName = 'Loading...';
-  bool _isLoading = true;
+  String _ownerName = '';
+  bool _isLoading = false;
   List<Restaurant> _restaurants = [];
   int? _ownerId;
   String? _errorMessage;
+  
+  // Cache SharedPreferences to avoid repeated async calls
+  SharedPreferences? _prefs;
 
   @override
   void initState() {
     super.initState();
-    _loadDashboardData();
+    // ⚡ ULTRA-FAST: Load immediately, no waiting
+    _initializeFast();
   }
 
-  /// Optimized: Load all data in parallel instead of sequentially
-  Future<void> _loadDashboardData() async {
-    if (!mounted) return;
+  /// ⚡ ULTRA-FAST initialization - load data in background
+  Future<void> _initializeFast() async {
+    // Get cached prefs or load once
+    _prefs ??= await SharedPreferences.getInstance();
+    final userId = _prefs!.getInt('userId');
+
+    if (userId == null) {
+      if (mounted) {
+        setState(() {
+          _ownerName = 'Owner';
+          _isLoading = false;
+        });
+      }
+      return;
+    }
 
     setState(() {
+      _ownerId = userId;
+      _ownerName = _prefs!.getString('ownerName') ?? 'Owner';
       _isLoading = true;
-      _errorMessage = null;
     });
 
+    // Load restaurants only (skip profile query for speed)
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final userId = prefs.getInt('userId');
-
-      if (userId == null) {
-        throw Exception('User ID not found');
-      }
-
-      setState(() {
-        _ownerId = userId;
-      });
-
-      // ✅ OPTIMIZATION: Load profile and restaurants in parallel
-      final results = await Future.wait([
-        _authService.getOwnerProfile(userId),
-        RestaurantService.instance.getRestaurantsByOwner(userId),
-      ]);
-
-      final profile = results[0];
-      final restaurantsData = results[1] as List<Map<String, dynamic>>;
+      final restaurantsData = await RestaurantService.instance.getRestaurantsByOwner(userId);
 
       if (!mounted) return;
 
       setState(() {
-        _ownerName = profile?.name ?? 'Owner';
         _restaurants = restaurantsData
             .map((json) => Restaurant.fromJson(json))
             .toList();
         _isLoading = false;
       });
+
+      // Load profile in background (non-blocking)
+      _loadOwnerNameInBackground(userId);
     } catch (e) {
-      debugPrint('❌ Error loading dashboard: $e');
+      debugPrint('❌ Error loading restaurants: $e');
       if (mounted) {
         setState(() {
-          _ownerName = 'Owner';
           _errorMessage = e.toString();
           _isLoading = false;
         });
       }
+    }
+  }
+
+  /// Load owner name in background without blocking UI
+  Future<void> _loadOwnerNameInBackground(int userId) async {
+    try {
+      final profile = await _authService.getOwnerProfile(userId);
+      if (profile != null && mounted) {
+        final newName = profile.name;
+        if (newName != _ownerName) {
+          setState(() {
+            _ownerName = newName;
+          });
+          // Cache for next time
+          _prefs?.setString('ownerName', newName);
+        }
+      }
+    } catch (e) {
+      debugPrint('⚠️ Background profile load failed: $e');
+      // Don't show error, we already have restaurants loaded
     }
   }
 
@@ -143,13 +164,7 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
         children: [
           _buildHeader(),
           Expanded(
-            child: _isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(
-                      color: AppColors.primaryOrange,
-                    ),
-                  )
-                : _restaurants.isEmpty
+            child: _restaurants.isEmpty && !_isLoading
                 ? _buildEmptyState()
                 : _buildRestaurantList(),
           ),
@@ -184,7 +199,7 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
           ),
           const SizedBox(height: 32),
           Text(
-            'Bonjour, $_ownerName! 👋',
+            _ownerName.isEmpty ? 'Bonjour! 👋' : 'Bonjour, $_ownerName! 👋',
             style: const TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
@@ -253,7 +268,7 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Bonjour, $_ownerName!',
+                              _ownerName.isEmpty ? 'Bonjour!' : 'Bonjour, $_ownerName!',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 18,
@@ -301,19 +316,32 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
               ],
             ),
           ),
-          // Restaurant list
-          SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                final restaurant = _restaurants[index];
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: _buildRestaurantCard(restaurant),
-                );
-              },
-              childCount: _restaurants.length,
+          // Show loading indicator if loading
+          if (_isLoading && _restaurants.isEmpty)
+            SliverToBoxAdapter(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(32.0),
+                  child: CircularProgressIndicator(
+                    color: AppColors.primaryOrange,
+                  ),
+                ),
+              ),
             ),
-          ),
+          // Restaurant list
+          if (_restaurants.isNotEmpty)
+            SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final restaurant = _restaurants[index];
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: _buildRestaurantCard(restaurant),
+                  );
+                },
+                childCount: _restaurants.length,
+              ),
+            ),
         ],
       ),
     );
