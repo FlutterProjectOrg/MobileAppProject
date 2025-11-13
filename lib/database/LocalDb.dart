@@ -15,7 +15,7 @@ class LocalDb {
 
     _db = await openDatabase(
       path,
-      version: 6,
+      version: 7,
       onCreate: (db, version) async {
         await db.execute("""
           CREATE TABLE users (
@@ -67,6 +67,8 @@ class LocalDb {
             pictures TEXT DEFAULT '[]',
             work_time TEXT DEFAULT '[]',
             owner_id INTEGER NOT NULL,
+            cuisine TEXT DEFAULT 'Autre',
+            price_range TEXT DEFAULT '€€',
             FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
           )
         """);
@@ -225,6 +227,23 @@ class LocalDb {
                 FOREIGN KEY (conversation_id) REFERENCES chat_conversations(id) ON DELETE CASCADE
               )
             """);
+          }
+        }
+        
+        // Migration for version 7: Add cuisine and price_range to restaurants
+        if (oldV < 7) {
+          final restaurantCols = await db.rawQuery("PRAGMA table_info(restaurants)");
+          final restaurantColNames = restaurantCols.map((e) => e['name']).toSet();
+          
+          if (!restaurantColNames.contains('cuisine')) {
+            await db.execute(
+              "ALTER TABLE restaurants ADD COLUMN cuisine TEXT DEFAULT 'Autre'",
+            );
+          }
+          if (!restaurantColNames.contains('price_range')) {
+            await db.execute(
+              "ALTER TABLE restaurants ADD COLUMN price_range TEXT DEFAULT '€€'",
+            );
           }
         }
         

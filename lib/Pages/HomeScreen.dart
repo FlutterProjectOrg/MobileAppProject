@@ -33,12 +33,18 @@ class _HomeScreenState extends State<HomeScreen> {
   );
 
   final List<String> cuisineTypes = [
-    'Italien',
     'Français',
+    'Italien',
     'Japonais',
+    'Chinois',
     'Indien',
     'Mexicain',
-    'Chinois',
+    'Thaï',
+    'Vietnamien',
+    'Méditerranéen',
+    'Fast-food',
+    'Végétarien',
+    'Autre',
   ];
 
   @override
@@ -74,14 +80,18 @@ class _HomeScreenState extends State<HomeScreen> {
         final averageRating = (data['average_rating'] as num?)?.toDouble() ?? 0.0;
         final totalReviews = (data['total_reviews'] as int?) ?? 0;
 
+        // Get cuisine and price range from database
+        final cuisine = data['cuisine'] as String? ?? 'Autre';
+        final priceRange = data['price_range'] as String? ?? '€€';
+
         return Restaurant(
           id: data['id'] as int,
           name: data['name'] as String,
-          cuisine: 'Cuisine variée', // Default cuisine type
+          cuisine: cuisine,
           rating: averageRating,
           reviews: totalReviews,
           distance: '1.5 km', // Default distance
-          priceRange: '€€', // Default price range
+          priceRange: priceRange,
           image: imageUrl,
           isOpen: true, // Default to open
           openUntil: '22:00',

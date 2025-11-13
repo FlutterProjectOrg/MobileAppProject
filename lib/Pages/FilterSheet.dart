@@ -51,14 +51,18 @@ class _FilterSheetState extends State<FilterSheet> {
   late RestaurantFilters _currentFilters;
 
   final List<String> cuisineTypes = [
-    'Italien',
     'Français',
+    'Italien',
     'Japonais',
+    'Chinois',
     'Indien',
     'Mexicain',
-    'Chinois',
     'Thaï',
     'Vietnamien',
+    'Méditerranéen',
+    'Fast-food',
+    'Végétarien',
+    'Autre',
   ];
 
   final List<String> priceRanges = ['€', '€€', '€€€', '€€€€'];
