@@ -4,6 +4,7 @@ import 'package:mobile_app_project/Pages/UI/ReviewCard.dart';
 import 'package:mobile_app_project/Pages/AddReviewModal.dart';
 import 'package:mobile_app_project/services/Review/ReviewService.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:mobile_app_project/Pages/UI/AppColors.dart';
 
 class RestaurantReviewsSection extends StatefulWidget {
   final int restaurantId;
@@ -18,7 +19,8 @@ class RestaurantReviewsSection extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<RestaurantReviewsSection> createState() => _RestaurantReviewsSectionState();
+  State<RestaurantReviewsSection> createState() =>
+      _RestaurantReviewsSectionState();
 }
 
 class _RestaurantReviewsSectionState extends State<RestaurantReviewsSection> {
@@ -44,10 +46,14 @@ class _RestaurantReviewsSectionState extends State<RestaurantReviewsSection> {
       _currentUserId = prefs.getInt('userId');
 
       // Load rating summary
-      final rating = await ReviewService.instance.getRestaurantRating(widget.restaurantId);
-      
+      final rating = await ReviewService.instance.getRestaurantRating(
+        widget.restaurantId,
+      );
+
       // Load all reviews
-      final reviews = await ReviewService.instance.getRestaurantReviews(widget.restaurantId);
+      final reviews = await ReviewService.instance.getRestaurantReviews(
+        widget.restaurantId,
+      );
 
       // Check if current user has reviewed
       Map<String, dynamic>? userReview;
@@ -102,17 +108,33 @@ class _RestaurantReviewsSectionState extends State<RestaurantReviewsSection> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Supprimer l\'avis'),
-        content: const Text('Êtes-vous sûr de vouloir supprimer votre avis ?'),
+        title: const Text(
+          'Supprimer l\'avis',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        content: const Text(
+          'Êtes-vous sûr de vouloir supprimer votre avis ?',
+          style: TextStyle(color: AppColors.textSecondary),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Annuler'),
+            child: const Text(
+              'Annuler',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
             child: const Text('Supprimer'),
           ),
@@ -123,24 +145,26 @@ class _RestaurantReviewsSectionState extends State<RestaurantReviewsSection> {
     if (confirm == true) {
       try {
         await ReviewService.instance.deleteReview(_userReview!['id']);
-        
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Row(
-                children: const [
+              content: const Row(
+                children: [
                   Icon(Icons.check_circle, color: Colors.white),
                   SizedBox(width: 12),
                   Text('Avis supprimé'),
                 ],
               ),
-              backgroundColor: const Color(0xFF10B981),
+              backgroundColor: Colors.green,
               behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               margin: const EdgeInsets.all(16),
             ),
           );
-          
+
           _loadData();
         }
       } catch (e) {
@@ -149,6 +173,11 @@ class _RestaurantReviewsSectionState extends State<RestaurantReviewsSection> {
             SnackBar(
               content: Text('Erreur: ${e.toString()}'),
               backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              margin: const EdgeInsets.all(16),
             ),
           );
         }
@@ -174,12 +203,13 @@ class _RestaurantReviewsSectionState extends State<RestaurantReviewsSection> {
           ],
         ),
         child: const Center(
-          child: CircularProgressIndicator(color: Color(0xFF10B981)),
+          child: CircularProgressIndicator(color: AppColors.primaryOrange),
         ),
       );
     }
 
-    final averageRating = (_ratingData?['average_rating'] as num?)?.toDouble() ?? 0.0;
+    final averageRating =
+        (_ratingData?['average_rating'] as num?)?.toDouble() ?? 0.0;
     final totalReviews = (_ratingData?['total_reviews'] as int?) ?? 0;
 
     return Container(
@@ -205,12 +235,12 @@ class _RestaurantReviewsSectionState extends State<RestaurantReviewsSection> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withOpacity(0.1),
+                  color: AppColors.primaryYellow.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(
                   Icons.star,
-                  color: Color(0xFF10B981),
+                  color: AppColors.primaryYellow,
                   size: 20,
                 ),
               ),
@@ -220,20 +250,24 @@ class _RestaurantReviewsSectionState extends State<RestaurantReviewsSection> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF1F2937),
+                  color: AppColors.textPrimary,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 20),
-          
+
           // Rating Summary
           if (totalReviews > 0) ...[
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFFFFC107).withOpacity(0.1),
+                color: AppColors.primaryYellow.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: AppColors.primaryYellow.withOpacity(0.2),
+                  width: 1,
+                ),
               ),
               child: Row(
                 children: [
@@ -244,24 +278,22 @@ class _RestaurantReviewsSectionState extends State<RestaurantReviewsSection> {
                         style: const TextStyle(
                           fontSize: 40,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF1F2937),
+                          color: AppColors.textPrimary,
                         ),
                       ),
                       StarRating(rating: averageRating, size: 20),
                       const SizedBox(height: 4),
                       Text(
                         '$totalReviews avis',
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 13,
-                          color: Colors.grey[600],
+                          color: AppColors.textSecondary,
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(width: 24),
-                  Expanded(
-                    child: _buildRatingBars(),
-                  ),
+                  Expanded(child: _buildRatingBars()),
                 ],
               ),
             ),
@@ -275,8 +307,11 @@ class _RestaurantReviewsSectionState extends State<RestaurantReviewsSection> {
               child: OutlinedButton.icon(
                 onPressed: _showAddReviewModal,
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF10B981),
-                  side: const BorderSide(color: Color(0xFF10B981)),
+                  foregroundColor: AppColors.primaryOrange,
+                  side: const BorderSide(
+                    color: AppColors.primaryOrange,
+                    width: 2,
+                  ),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -293,11 +328,11 @@ class _RestaurantReviewsSectionState extends State<RestaurantReviewsSection> {
               ),
             ),
           ],
-          
+
           // Reviews List
           if (_reviews.isNotEmpty) ...[
             const SizedBox(height: 24),
-            const Divider(),
+            Divider(color: Colors.grey[200]),
             const SizedBox(height: 16),
             ListView.builder(
               shrinkWrap: true,
@@ -305,7 +340,8 @@ class _RestaurantReviewsSectionState extends State<RestaurantReviewsSection> {
               itemCount: _reviews.length,
               itemBuilder: (context, index) {
                 final review = _reviews[index];
-                final isUserReview = _currentUserId != null && 
+                final isUserReview =
+                    _currentUserId != null &&
                     review['user_id'] == _currentUserId;
 
                 return ReviewCard(
@@ -329,18 +365,12 @@ class _RestaurantReviewsSectionState extends State<RestaurantReviewsSection> {
                   const SizedBox(height: 12),
                   Text(
                     'Aucun avis pour le moment',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Soyez le premier à laisser un avis !',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey[500],
-                    ),
+                    style: TextStyle(fontSize: 13, color: Colors.grey[500]),
                   ),
                 ],
               ),
@@ -363,21 +393,24 @@ class _RestaurantReviewsSectionState extends State<RestaurantReviewsSection> {
             children: [
               Text(
                 '$stars',
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 12,
-                  color: Colors.grey[700],
+                  color: AppColors.textSecondary,
                 ),
               ),
               const SizedBox(width: 4),
-              const Icon(Icons.star, size: 12, color: Color(0xFFFFC107)),
+              const Icon(Icons.star, size: 12, color: AppColors.primaryYellow),
               const SizedBox(width: 8),
               Expanded(
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(4),
                   child: LinearProgressIndicator(
-                    value: 0.3, // Placeholder - should calculate from actual data
+                    value:
+                        0.3, // Placeholder - should calculate from actual data
                     backgroundColor: Colors.grey[200],
-                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFFC107)),
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      AppColors.primaryYellow,
+                    ),
                     minHeight: 6,
                   ),
                 ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_app_project/Pages/UI/StarRating.dart';
+import 'package:mobile_app_project/Pages/UI/AppColors.dart';
 import 'package:intl/intl.dart';
 
 class ReviewCard extends StatelessWidget {
@@ -43,10 +44,7 @@ class ReviewCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.grey[200]!,
-          width: 1,
-        ),
+        border: Border.all(color: Colors.grey[200]!, width: 1),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.03),
@@ -64,7 +62,7 @@ class ReviewCard extends StatelessWidget {
               // User Avatar
               CircleAvatar(
                 radius: 20,
-                backgroundColor: const Color(0xFF10B981).withOpacity(0.1),
+                backgroundColor: AppColors.primaryOrange.withOpacity(0.1),
                 backgroundImage: userAvatar != null && userAvatar.isNotEmpty
                     ? NetworkImage(userAvatar)
                     : null,
@@ -72,7 +70,7 @@ class ReviewCard extends StatelessWidget {
                     ? Text(
                         userName[0].toUpperCase(),
                         style: const TextStyle(
-                          color: Color(0xFF10B981),
+                          color: AppColors.primaryOrange,
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
                         ),
@@ -90,24 +88,24 @@ class ReviewCard extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF1F2937),
+                        color: AppColors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       formattedDate,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 12,
-                        color: Colors.grey[600],
+                        color: AppColors.textSecondary,
                       ),
                     ),
                     if (showRestaurantName && restaurantName != null) ...[
                       const SizedBox(height: 2),
                       Text(
                         restaurantName,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 12,
-                          color: Colors.grey[700],
+                          color: AppColors.textPrimary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -118,7 +116,13 @@ class ReviewCard extends StatelessWidget {
               // Edit/Delete actions
               if (canEdit && (onEdit != null || onDelete != null))
                 PopupMenuButton<String>(
-                  icon: Icon(Icons.more_vert, color: Colors.grey[600]),
+                  icon: const Icon(
+                    Icons.more_vert,
+                    color: AppColors.textSecondary,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   onSelected: (value) {
                     if (value == 'edit' && onEdit != null) {
                       onEdit!();
@@ -132,7 +136,11 @@ class ReviewCard extends StatelessWidget {
                         value: 'edit',
                         child: Row(
                           children: [
-                            Icon(Icons.edit, size: 18, color: Color(0xFF10B981)),
+                            Icon(
+                              Icons.edit,
+                              size: 18,
+                              color: AppColors.primaryOrange,
+                            ),
                             SizedBox(width: 8),
                             Text('Modifier'),
                           ],
