@@ -22,6 +22,8 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _showMap = false;
   bool _isLoading = true;
   List<Restaurant> _restaurants = [];
+  List<Restaurant> _allRestaurants = []; // Store all restaurants
+  String _searchQuery = '';
 
   RestaurantFilters _filters = RestaurantFilters(
     cuisine: [],
@@ -43,6 +45,15 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadRestaurants();
+    // Listen to search input
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  void _onSearchChanged() {
+    setState(() {
+      _searchQuery = _searchController.text;
+      _applyFilters();
+    });
   }
 
   Future<void> _loadRestaurants() async {
@@ -81,9 +92,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
       if (mounted) {
         setState(() {
+          _allRestaurants = restaurants;
           _restaurants = restaurants;
           _isLoading = false;
         });
+        _applyFilters(); // Apply any active filters
       }
     } catch (e) {
       debugPrint('Error loading restaurants: $e');
@@ -95,8 +108,99 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  /// ⚡ Filter restaurants based on current filters and search query
+  void _applyFilters() {
+    List<Restaurant> filtered = List.from(_allRestaurants);
+
+    // ✅ Apply search filter
+    if (_searchQuery.isNotEmpty) {
+      final query = _searchQuery.toLowerCase();
+      filtered = filtered.where((restaurant) {
+        return restaurant.name.toLowerCase().contains(query) ||
+               restaurant.cuisine.toLowerCase().contains(query);
+      }).toList();
+    }
+
+    // ✅ Apply cuisine filter
+    if (_filters.cuisine.isNotEmpty) {
+      filtered = filtered.where((restaurant) {
+        return _filters.cuisine.any((cuisine) =>
+            restaurant.cuisine.toLowerCase().contains(cuisine.toLowerCase()));
+      }).toList();
+    }
+
+    // ✅ Apply price range filter
+    if (_filters.priceRange.isNotEmpty) {
+      filtered = filtered.where((restaurant) {
+        return _filters.priceRange.contains(restaurant.priceRange);
+      }).toList();
+    }
+
+    // ✅ Apply rating filter
+    if (_filters.rating > 0) {
+      filtered = filtered.where((restaurant) {
+        return restaurant.rating >= _filters.rating;
+      }).toList();
+    }
+
+    // ✅ Apply distance filter (if we had real location data)
+    // Distance filtering would require actual GPS coordinates
+    // For now, we'll skip this since we use default "1.5 km"
+
+    setState(() {
+      _restaurants = filtered;
+    });
+  }
+
+  /// Quick filter actions
+  void _applyQuickFilter(String filterType) {
+    setState(() {
+      switch (filterType) {
+        case 'Top notés':
+          _filters = _filters.copyWith(rating: 4.0);
+          break;
+        case 'Près de moi':
+          _filters = _filters.copyWith(distance: 5.0);
+          break;
+        case 'Bon marché':
+          _filters = _filters.copyWith(priceRange: ['€', '€€']);
+          break;
+        default:
+          // Cuisine filter
+          if (cuisineTypes.contains(filterType)) {
+            if (_filters.cuisine.contains(filterType)) {
+              _filters = _filters.copyWith(
+                cuisine: _filters.cuisine.where((c) => c != filterType).toList(),
+              );
+            } else {
+              _filters = _filters.copyWith(
+                cuisine: [..._filters.cuisine, filterType],
+              );
+            }
+          }
+      }
+      _applyFilters();
+    });
+  }
+
+  /// Clear all filters
+  void _clearFilters() {
+    setState(() {
+      _filters = RestaurantFilters(
+        cuisine: [],
+        priceRange: [],
+        rating: 0,
+        distance: 10,
+      );
+      _searchQuery = '';
+      _searchController.clear();
+      _applyFilters();
+    });
+  }
+
   @override
   void dispose() {
+    _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     super.dispose();
   }
@@ -123,7 +227,10 @@ class _HomeScreenState extends State<HomeScreen> {
           onClose: () => setState(() => _showFilters = false),
           filters: _filters,
           onFiltersChange: (newFilters) {
-            setState(() => _filters = newFilters);
+            setState(() {
+              _filters = newFilters;
+            });
+            _applyFilters(); // ✅ Apply filters when changed
           },
         ),
       ],
@@ -313,21 +420,37 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildQuickFilterChip({IconData? icon, required String label}) {
+    // Check if this filter is active
+    bool isActive = false;
+    if (label == 'Top notés') {
+      isActive = _filters.rating >= 4.0;
+    } else if (label == 'Près de moi') {
+      isActive = _filters.distance <= 5.0;
+    } else if (label == 'Bon marché') {
+      isActive = _filters.priceRange.contains('€') || 
+                 _filters.priceRange.contains('€€');
+    } else if (cuisineTypes.contains(label)) {
+      isActive = _filters.cuisine.contains(label);
+    }
+
     return GestureDetector(
-      onTap: () {
-        // Action pour le filtre rapide
-      },
+      onTap: () => _applyQuickFilter(label), // ✅ Make functional
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(color: AppColors.primaryOrange.withOpacity(0.2)),
+          gradient: isActive ? AppColors.gradientPrimary : null,
+          color: isActive ? null : Colors.white,
+          border: Border.all(
+            color: isActive
+                ? Colors.transparent
+                : AppColors.primaryOrange.withOpacity(0.2),
+          ),
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primaryOrange.withOpacity(0.05),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
+              color: AppColors.primaryOrange.withOpacity(isActive ? 0.3 : 0.05),
+              blurRadius: isActive ? 8 : 4,
+              offset: Offset(0, isActive ? 3 : 2),
             ),
           ],
         ),
@@ -335,15 +458,19 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (icon != null) ...[
-              Icon(icon, size: 14, color: AppColors.primaryOrange),
+              Icon(
+                icon,
+                size: 14,
+                color: isActive ? Colors.white : AppColors.primaryOrange,
+              ),
               const SizedBox(width: 6),
             ],
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.w500,
+                color: isActive ? Colors.white : AppColors.textPrimary,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
               ),
             ),
           ],
@@ -471,19 +598,27 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
+    // Check if any filters are active
+    final bool hasActiveFilters = _filters.cuisine.isNotEmpty ||
+        _filters.priceRange.isNotEmpty ||
+        _filters.rating > 0 ||
+        _searchQuery.isNotEmpty;
+
     if (_restaurants.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.restaurant_menu,
+              hasActiveFilters ? Icons.filter_alt_off : Icons.restaurant_menu,
               size: 64,
               color: Colors.grey[400],
             ),
             const SizedBox(height: 16),
             Text(
-              'Aucun restaurant disponible',
+              hasActiveFilters
+                  ? 'Aucun restaurant trouvé'
+                  : 'Aucun restaurant disponible',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -492,12 +627,33 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Revenez plus tard ou ajoutez-en un',
+              hasActiveFilters
+                  ? 'Essayez de modifier vos filtres'
+                  : 'Revenez plus tard ou ajoutez-en un',
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey[500],
               ),
             ),
+            if (hasActiveFilters) ...[
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: _clearFilters,
+                icon: const Icon(Icons.clear),
+                label: const Text('Effacer les filtres'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryOrange,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       );
@@ -509,6 +665,61 @@ class _HomeScreenState extends State<HomeScreen> {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         children: [
+          // Filter status bar
+          if (hasActiveFilters)
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 8),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                gradient: AppColors.gradientPrimary.scale(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: AppColors.primaryOrange.withOpacity(0.3),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      gradient: AppColors.gradientPrimary,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.filter_alt,
+                      size: 16,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      _getActiveFiltersText(),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  TextButton.icon(
+                    onPressed: _clearFilters,
+                    icon: const Icon(Icons.close, size: 16),
+                    label: const Text('Effacer'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.primaryOrange,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          // Results count
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Text(
@@ -516,6 +727,7 @@ class _HomeScreenState extends State<HomeScreen> {
               style: TextStyle(color: Colors.grey[600], fontSize: 14),
             ),
           ),
+          // Restaurant list
           ..._restaurants.map(
             (restaurant) => Padding(
               padding: const EdgeInsets.only(bottom: 12),
@@ -528,5 +740,25 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
     );
+  }
+
+  /// Get text describing active filters
+  String _getActiveFiltersText() {
+    List<String> parts = [];
+    
+    if (_searchQuery.isNotEmpty) {
+      parts.add('Recherche: "$_searchQuery"');
+    }
+    if (_filters.cuisine.isNotEmpty) {
+      parts.add('${_filters.cuisine.length} cuisine${_filters.cuisine.length > 1 ? 's' : ''}');
+    }
+    if (_filters.priceRange.isNotEmpty) {
+      parts.add('Prix: ${_filters.priceRange.join(", ")}');
+    }
+    if (_filters.rating > 0) {
+      parts.add('Note ≥ ${_filters.rating.toStringAsFixed(1)}');
+    }
+    
+    return parts.join(' • ');
   }
 }
