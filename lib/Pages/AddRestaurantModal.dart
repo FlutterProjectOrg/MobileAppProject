@@ -39,6 +39,25 @@ class _AddRestaurantModalState extends State<AddRestaurantModal> {
     states: [],
   );
   String? _selectedState;
+  String _selectedCuisine = 'Français';
+  String _selectedPriceRange = '€€';
+
+  final List<String> _cuisineTypes = [
+    'Français',
+    'Italien',
+    'Japonais',
+    'Chinois',
+    'Indien',
+    'Mexicain',
+    'Thaï',
+    'Vietnamien',
+    'Méditerranéen',
+    'Fast-food',
+    'Végétarien',
+    'Autre',
+  ];
+
+  final List<String> _priceRanges = ['€', '€€', '€€€', '€€€€'];
 
   // Pictures state
   List<XFile> _selectedImages = [];
@@ -117,6 +136,8 @@ class _AddRestaurantModalState extends State<AddRestaurantModal> {
         'pictures': picturePaths,
         'work_time': workTimeList,
         'owner_id': widget.ownerId,
+        'cuisine': _selectedCuisine,
+        'price_range': _selectedPriceRange,
       };
 
       await RestaurantService.instance.createRestaurant(restaurantData);
@@ -317,6 +338,108 @@ class _AddRestaurantModalState extends State<AddRestaurantModal> {
                           return 'Le nom doit contenir au moins 3 caractères';
                         }
                         return null;
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                    // Cuisine Type
+                    const Text(
+                      'Type de cuisine *',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<String>(
+                      value: _selectedCuisine,
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Colors.grey[50],
+                        prefixIcon: const Icon(Icons.restaurant, size: 20),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: AppColors.primaryOrange,
+                            width: 2,
+                          ),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                      ),
+                      items: _cuisineTypes.map((String cuisine) {
+                        return DropdownMenuItem<String>(
+                          value: cuisine,
+                          child: Text(cuisine),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        if (newValue != null) {
+                          setState(() {
+                            _selectedCuisine = newValue;
+                          });
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                    // Price Range
+                    const Text(
+                      'Gamme de prix *',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<String>(
+                      value: _selectedPriceRange,
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Colors.grey[50],
+                        prefixIcon: const Icon(Icons.euro, size: 20),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: AppColors.primaryOrange,
+                            width: 2,
+                          ),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                      ),
+                      items: _priceRanges.map((String range) {
+                        return DropdownMenuItem<String>(
+                          value: range,
+                          child: Text(range),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        if (newValue != null) {
+                          setState(() {
+                            _selectedPriceRange = newValue;
+                          });
+                        }
                       },
                     ),
                     const SizedBox(height: 20),

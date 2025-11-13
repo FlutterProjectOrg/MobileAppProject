@@ -83,6 +83,7 @@ class _AppScreenState extends State<AppScreen> {
   }
 
   void _toggleChatbot() {
+    // Immediate UI response - no delay
     setState(() {
       _showChatbot = !_showChatbot;
     });
@@ -248,38 +249,43 @@ class _AppScreenState extends State<AppScreen> {
   }
 
   Widget _buildChatbotButton() {
-    return GestureDetector(
-      onTap: _toggleChatbot,
-      child: Transform.translate(
-        offset: const Offset(0, -32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                gradient: AppColors.gradientPrimary,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primaryOrange.withOpacity(0.4),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: _toggleChatbot,
+        borderRadius: BorderRadius.circular(16),
+        splashColor: AppColors.primaryOrange.withOpacity(0.3),
+        child: Transform.translate(
+          offset: const Offset(0, -32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: AppColors.gradientPrimary,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primaryOrange.withOpacity(0.4),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: const Icon(Icons.message, color: Colors.white, size: 24),
               ),
-              child: const Icon(Icons.message, color: Colors.white, size: 24),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'IA',
-              style: TextStyle(
-                fontSize: 10,
-                color: AppColors.primaryOrange,
-                fontWeight: FontWeight.bold,
+              const SizedBox(height: 8),
+              const Text(
+                'IA',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: AppColors.primaryOrange,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

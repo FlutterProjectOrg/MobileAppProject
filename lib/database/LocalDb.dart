@@ -15,7 +15,7 @@ class LocalDb {
 
     _db = await openDatabase(
       path,
-      version: 5,
+      version: 7,
       onCreate: (db, version) async {
         await db.execute("""
           CREATE TABLE users (
@@ -67,6 +67,8 @@ class LocalDb {
             pictures TEXT DEFAULT '[]',
             work_time TEXT DEFAULT '[]',
             owner_id INTEGER NOT NULL,
+            cuisine TEXT DEFAULT 'Autre',
+            price_range TEXT DEFAULT '€€',
             FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
           )
         """);
@@ -108,6 +110,26 @@ class LocalDb {
             average_rating REAL DEFAULT 0.0,
             total_reviews INTEGER DEFAULT 0,
             FOREIGN KEY (restaurant_id) REFERENCES restaurants(id) ON DELETE CASCADE
+          )
+        """);
+        await db.execute("""
+          CREATE TABLE chat_conversations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            title TEXT DEFAULT 'Nouvelle conversation',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+          )
+        """);
+        await db.execute("""
+          CREATE TABLE chat_messages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            conversation_id INTEGER NOT NULL,
+            sender TEXT NOT NULL CHECK (sender IN ('user', 'ai')),
+            message TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (conversation_id) REFERENCES chat_conversations(id) ON DELETE CASCADE
           )
         """);
       },
@@ -166,6 +188,62 @@ class LocalDb {
                 FOREIGN KEY (restaurant_id) REFERENCES restaurants(id) ON DELETE CASCADE
               )
             """);
+          }
+        }
+        
+        // Migration for version 6: Add chat conversations and messages tables
+        if (oldV < 6) {
+          // Check if chat_conversations table exists
+          final chatTables = await db.rawQuery(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='chat_conversations'",
+          );
+          
+          if (chatTables.isEmpty) {
+            await db.execute("""
+              CREATE TABLE chat_conversations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER,
+                title TEXT DEFAULT 'Nouvelle conversation',
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+              )
+            """);
+          }
+          
+          // Check if chat_messages table exists
+          final messageTables = await db.rawQuery(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='chat_messages'",
+          );
+          
+          if (messageTables.isEmpty) {
+            await db.execute("""
+              CREATE TABLE chat_messages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                conversation_id INTEGER NOT NULL,
+                sender TEXT NOT NULL CHECK (sender IN ('user', 'ai')),
+                message TEXT NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (conversation_id) REFERENCES chat_conversations(id) ON DELETE CASCADE
+              )
+            """);
+          }
+        }
+        
+        // Migration for version 7: Add cuisine and price_range to restaurants
+        if (oldV < 7) {
+          final restaurantCols = await db.rawQuery("PRAGMA table_info(restaurants)");
+          final restaurantColNames = restaurantCols.map((e) => e['name']).toSet();
+          
+          if (!restaurantColNames.contains('cuisine')) {
+            await db.execute(
+              "ALTER TABLE restaurants ADD COLUMN cuisine TEXT DEFAULT 'Autre'",
+            );
+          }
+          if (!restaurantColNames.contains('price_range')) {
+            await db.execute(
+              "ALTER TABLE restaurants ADD COLUMN price_range TEXT DEFAULT '€€'",
+            );
           }
         }
         

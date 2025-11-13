@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:mobile_app_project/services/Auth/auth_service.dart';
+import 'package:mobile_app_project/services/Auth/LocalAuthService.dart';
 import 'package:mobile_app_project/Pages/AddRestaurantModal.dart';
 import 'package:mobile_app_project/Pages/RestaurantDetailOwner.dart';
 import 'package:mobile_app_project/services/Restaurant/RestaurantService.dart';
@@ -30,69 +30,107 @@ class Restaurant {
 }
 
 class _OwnerDashboardState extends State<OwnerDashboard> {
-  final _authService = AuthService();
-  String _ownerName = 'Loading...';
-  bool _isLoading = true;
+  final _authService = LocalAuthService.instance;
+  String _ownerName = '';
+  bool _isLoading = false;
   List<Restaurant> _restaurants = [];
   int? _ownerId;
+  String? _errorMessage;
+  
+  // Cache SharedPreferences to avoid repeated async calls
+  SharedPreferences? _prefs;
 
   @override
   void initState() {
     super.initState();
-    _loadOwnerInfo();
+    // ⚡ ULTRA-FAST: Load immediately, no waiting
+    _initializeFast();
   }
 
-  Future<void> _loadOwnerInfo() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final userId = prefs.getInt('userId');
+  /// ⚡ ULTRA-FAST initialization - load data in background
+  Future<void> _initializeFast() async {
+    // Get cached prefs or load once
+    _prefs ??= await SharedPreferences.getInstance();
+    final userId = _prefs!.getInt('userId');
 
-      if (userId != null) {
-        setState(() {
-          _ownerId = userId;
-        });
-
-        final profile = await _authService.getOwnerProfile(userId);
-        if (profile != null && mounted) {
-          setState(() {
-            _ownerName = profile.name;
-          });
-        }
-
-        // Fetch restaurants
-        await _loadRestaurants(userId);
-      }
-    } catch (e) {
-      debugPrint('Error loading owner info: $e');
+    if (userId == null) {
       if (mounted) {
         setState(() {
           _ownerName = 'Owner';
           _isLoading = false;
         });
       }
+      return;
+    }
+
+    setState(() {
+      _ownerId = userId;
+      _ownerName = _prefs!.getString('ownerName') ?? 'Owner';
+      _isLoading = true;
+    });
+
+    // Load restaurants only (skip profile query for speed)
+    try {
+      final restaurantsData = await RestaurantService.instance.getRestaurantsByOwner(userId);
+
+      if (!mounted) return;
+
+      setState(() {
+        _restaurants = restaurantsData
+            .map((json) => Restaurant.fromJson(json))
+            .toList();
+        _isLoading = false;
+      });
+
+      // Load profile in background (non-blocking)
+      _loadOwnerNameInBackground(userId);
+    } catch (e) {
+      debugPrint('❌ Error loading restaurants: $e');
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString();
+          _isLoading = false;
+        });
+      }
     }
   }
 
-  Future<void> _loadRestaurants(int ownerId) async {
+  /// Load owner name in background without blocking UI
+  Future<void> _loadOwnerNameInBackground(int userId) async {
     try {
-      // Fetch restaurants from local SQLite database
+      final profile = await _authService.getOwnerProfile(userId);
+      if (profile != null && mounted) {
+        final newName = profile.name;
+        if (newName != _ownerName) {
+          setState(() {
+            _ownerName = newName;
+          });
+          // Cache for next time
+          _prefs?.setString('ownerName', newName);
+        }
+      }
+    } catch (e) {
+      debugPrint('⚠️ Background profile load failed: $e');
+      // Don't show error, we already have restaurants loaded
+    }
+  }
+
+  /// Quick refresh - only reload restaurants (owner name doesn't change)
+  Future<void> _refreshRestaurants() async {
+    if (_ownerId == null) return;
+
+    try {
       final data = await RestaurantService.instance.getRestaurantsByOwner(
-        ownerId,
+        _ownerId!,
       );
 
       if (mounted) {
         setState(() {
           _restaurants = data.map((json) => Restaurant.fromJson(json)).toList();
-          _isLoading = false;
         });
       }
     } catch (e) {
-      debugPrint('Error loading restaurants: $e');
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      debugPrint('❌ Error refreshing restaurants: $e');
     }
   }
 
@@ -110,8 +148,8 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
         child: AddRestaurantModal(
           ownerId: _ownerId!,
           onRestaurantAdded: () {
-            // Reload restaurants after adding
-            _loadOwnerInfo();
+            // ✅ OPTIMIZATION: Only refresh restaurants list (faster)
+            _refreshRestaurants();
           },
         ),
       ),
@@ -126,13 +164,7 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
         children: [
           _buildHeader(),
           Expanded(
-            child: _isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(
-                      color: AppColors.primaryOrange,
-                    ),
-                  )
-                : _restaurants.isEmpty
+            child: _restaurants.isEmpty && !_isLoading
                 ? _buildEmptyState()
                 : _buildRestaurantList(),
           ),
@@ -167,7 +199,7 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
           ),
           const SizedBox(height: 32),
           Text(
-            'Bonjour, $_ownerName! 👋',
+            _ownerName.isEmpty ? 'Bonjour! 👋' : 'Bonjour, $_ownerName! 👋',
             style: const TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
@@ -204,89 +236,114 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
   }
 
   Widget _buildRestaurantList() {
-    return Column(
-      children: [
-        // Welcome message
-        Container(
-          margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            gradient: AppColors.gradientPrimary,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primaryOrange.withOpacity(0.2),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              const Icon(Icons.waving_hand, color: Colors.white, size: 28),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Bonjour, $_ownerName!',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+    return RefreshIndicator(
+      onRefresh: _refreshRestaurants,
+      color: AppColors.primaryOrange,
+      child: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: Column(
+              children: [
+                // Welcome message
+                Container(
+                  margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: AppColors.gradientPrimary,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primaryOrange.withOpacity(0.2),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
                       ),
-                    ),
-                    Text(
-                      '${_restaurants.length} restaurant${_restaurants.length > 1 ? 's' : ''}',
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.waving_hand, color: Colors.white, size: 28),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _ownerName.isEmpty ? 'Bonjour!' : 'Bonjour, $_ownerName!',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              '${_restaurants.length} restaurant${_restaurants.length > 1 ? 's' : ''}',
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
+                ),
+                // Section header
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Mes restaurants',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: _showAddRestaurantModal,
+                        icon: const Icon(
+                          Icons.add_circle,
+                          color: AppColors.primaryOrange,
+                        ),
+                        iconSize: 32,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Show loading indicator if loading
+          if (_isLoading && _restaurants.isEmpty)
+            SliverToBoxAdapter(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(32.0),
+                  child: CircularProgressIndicator(
+                    color: AppColors.primaryOrange,
+                  ),
                 ),
               ),
-            ],
-          ),
-        ),
-        // Section header
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Mes restaurants',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
+            ),
+          // Restaurant list
+          if (_restaurants.isNotEmpty)
+            SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final restaurant = _restaurants[index];
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: _buildRestaurantCard(restaurant),
+                  );
+                },
+                childCount: _restaurants.length,
               ),
-              IconButton(
-                onPressed: _showAddRestaurantModal,
-                icon: const Icon(
-                  Icons.add_circle,
-                  color: AppColors.primaryOrange,
-                ),
-                iconSize: 32,
-              ),
-            ],
-          ),
-        ),
-        // Restaurant list
-        Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: _restaurants.length,
-            itemBuilder: (context, index) {
-              final restaurant = _restaurants[index];
-              return _buildRestaurantCard(restaurant);
-            },
-          ),
-        ),
-      ],
+            ),
+        ],
+      ),
     );
   }
 
@@ -317,10 +374,8 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
                   ),
                 )
                 .then((_) {
-                  // Refresh the list when returning from detail screen
-                  if (_ownerId != null) {
-                    _loadRestaurants(_ownerId!);
-                  }
+                  // ✅ OPTIMIZATION: Quick refresh after returning
+                  _refreshRestaurants();
                 });
           },
           child: Padding(

@@ -13,6 +13,8 @@ class RestaurantService {
     final adresse = data['adresse'] as String;
     final pictures = (data['pictures'] as List?)?.cast<String>() ?? [];
     final workTime = (data['work_time'] as List?) ?? [];
+    final cuisine = data['cuisine'] as String? ?? 'Autre';
+    final priceRange = data['price_range'] as String? ?? '€€';
 
     final picsJson = jsonEncode(pictures);
     final wtJson = jsonEncode(workTime);
@@ -24,6 +26,8 @@ class RestaurantService {
       'pictures': picsJson,
       'work_time': wtJson,
       'owner_id': ownerId,
+      'cuisine': cuisine,
+      'price_range': priceRange,
     });
     return id;
   }
@@ -70,6 +74,8 @@ class RestaurantService {
         'adresse': data['adresse'],
         'pictures': picsJson,
         'work_time': wtJson,
+        if (data.containsKey('cuisine')) 'cuisine': data['cuisine'],
+        if (data.containsKey('price_range')) 'price_range': data['price_range'],
       },
       where: 'id = ?',
       whereArgs: [id],
@@ -94,6 +100,8 @@ class RestaurantService {
       'pictures': List<String>.from(jsonDecode(picsStr)),
       'work_time': List<Map<String, dynamic>>.from(jsonDecode(wtStr)),
       'owner_id': row['owner_id'],
+      'cuisine': row['cuisine'] ?? 'Autre',
+      'price_range': row['price_range'] ?? '€€',
     };
   }
 }
