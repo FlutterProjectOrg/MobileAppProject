@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_app_project/Pages/AddDishModal.dart';
+import 'package:mobile_app_project/Pages/AddRestaurantModal.dart';
 import 'package:mobile_app_project/Pages/UI/AppColors.dart';
 import 'package:mobile_app_project/services/Restaurant/RestaurantService.dart';
 import 'package:mobile_app_project/services/Restaurant/DishService.dart';
@@ -392,14 +393,33 @@ class _RestaurantDetailOwnerState extends State<RestaurantDetailOwner> {
       actions: [
         IconButton(
           icon: const Icon(Icons.edit, color: Colors.white),
-          onPressed: () {
-            // TODO: Navigate to edit screen
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Text(
-                  'Fonctionnalité à venir: Modifier le restaurant',
+          onPressed: () async {
+            if (_restaurant == null) return;
+            
+            // Fetch the full restaurant data including owner_id
+            final restaurantData = await RestaurantService.instance.getRestaurant(widget.restaurantId);
+            if (restaurantData == null || !mounted) return;
+            
+            showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: Colors.transparent,
+              builder: (context) => Padding(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).viewInsets.bottom,
                 ),
-                backgroundColor: AppColors.primaryOrange,
+                child: DraggableScrollableSheet(
+                  initialChildSize: 0.95,
+                  minChildSize: 0.5,
+                  maxChildSize: 0.95,
+                  builder: (_, controller) => AddRestaurantModal(
+                    ownerId: restaurantData['owner_id'] as int,
+                    restaurantToEdit: restaurantData,
+                    onRestaurantAdded: () {
+                      _loadRestaurantDetails();
+                    },
+                  ),
+                ),
               ),
             );
           },
@@ -1194,19 +1214,112 @@ class _RestaurantDetailOwnerState extends State<RestaurantDetailOwner> {
               ],
             ),
           ),
-          // Edit/View button
-          IconButton(
-            icon: const Icon(Icons.more_vert),
-            color: Colors.grey[600],
-            onPressed: () {
-              // TODO: Show options (edit, delete, view)
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Fonctionnalité à venir: Gérer le plat'),
-                  backgroundColor: AppColors.primaryOrange,
-                ),
-              );
+          // Edit/Delete menu button
+          PopupMenuButton<String>(
+            icon: Icon(Icons.more_vert, color: Colors.grey[600]),
+            onSelected: (value) async {
+              if (value == 'edit') {
+                // Convert Dish object to Map for the modal
+                final dishMap = {
+                  'id': dish.id,
+                  'name': dish.name,
+                  'category': dish.category,
+                  'price': dish.price,
+                  'preparation_time': dish.preparationTime,
+                  'pictures': dish.pictures,
+                  'restaurant_id': widget.restaurantId,
+                };
+                
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (context) => Padding(
+                    padding: EdgeInsets.only(
+                      bottom: MediaQuery.of(context).viewInsets.bottom,
+                    ),
+                    child: DraggableScrollableSheet(
+                      initialChildSize: 0.95,
+                      minChildSize: 0.5,
+                      maxChildSize: 0.95,
+                      builder: (_, controller) => AddDishModal(
+                        restaurantId: widget.restaurantId,
+                        dishToEdit: dishMap,
+                        onDishAdded: () {
+                          _loadDishes();
+                        },
+                      ),
+                    ),
+                  ),
+                );
+              } else if (value == 'delete') {
+                // Show delete confirmation
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => ConfirmDeleteDialog(
+                    title: 'Supprimer le plat',
+                    content: 'Êtes-vous sûr de vouloir supprimer "${dish.name}" ?',
+                  ),
+                );
+                
+                if (confirmed == true && mounted) {
+                  try {
+                    await DishService.instance.deleteDish(dish.id);
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Row(
+                            children: [
+                              const Icon(Icons.check_circle, color: Colors.white),
+                              const SizedBox(width: 12),
+                              Text('${dish.name} supprimé avec succès'),
+                            ],
+                          ),
+                          backgroundColor: Colors.green,
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          margin: const EdgeInsets.all(16),
+                        ),
+                      );
+                      _loadDishes();
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Erreur: ${e.toString()}'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  }
+                }
+              }
             },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'edit',
+                child: Row(
+                  children: [
+                    Icon(Icons.edit, color: AppColors.primaryOrange, size: 20),
+                    SizedBox(width: 12),
+                    Text('Modifier'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'delete',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete, color: Colors.red, size: 20),
+                    SizedBox(width: 12),
+                    Text('Supprimer'),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),

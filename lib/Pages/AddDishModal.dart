@@ -7,11 +7,13 @@ import 'package:mobile_app_project/Pages/UI/AppColors.dart';
 class AddDishModal extends StatefulWidget {
   final int restaurantId;
   final VoidCallback onDishAdded;
+  final Map<String, dynamic>? dishToEdit;
 
   const AddDishModal({
     Key? key,
     required this.restaurantId,
     required this.onDishAdded,
+    this.dishToEdit,
   }) : super(key: key);
 
   @override
@@ -50,6 +52,33 @@ class _AddDishModalState extends State<AddDishModal> {
   String? _selectedCategory;
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.dishToEdit != null) {
+      _prePopulateForm();
+    }
+  }
+
+  void _prePopulateForm() {
+    final dish = widget.dishToEdit!;
+    
+    _nameController.text = dish['name'] as String? ?? '';
+    final category = dish['category'] as String? ?? '';
+    _categoryController.text = category;
+    _selectedCategory = _categories.contains(category) ? category : null;
+    
+    final price = dish['price'] as num? ?? 0.0;
+    _priceController.text = price.toString();
+    
+    _preparationTimeController.text = dish['preparation_time'] as String? ?? '';
+    
+    final pictures = dish['pictures'] as List<dynamic>? ?? [];
+    _selectedImages = pictures
+        .map((path) => XFile(path.toString()))
+        .toList();
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _categoryController.dispose();
@@ -79,7 +108,7 @@ class _AddDishModalState extends State<AddDishModal> {
       // Parse price
       final price = double.tryParse(_priceController.text.trim()) ?? 0.0;
 
-      // Create dish using local SQLite service
+      // Prepare dish data
       final dishData = {
         'name': _nameController.text.trim(),
         'category': category,
@@ -89,7 +118,15 @@ class _AddDishModalState extends State<AddDishModal> {
         'restaurant_id': widget.restaurantId,
       };
 
-      await DishService.instance.createDish(dishData);
+      // Check if we're editing or creating
+      final isEditing = widget.dishToEdit != null;
+      
+      if (isEditing) {
+        final dishId = widget.dishToEdit!['id'] as int;
+        await DishService.instance.updateDish(dishId, dishData);
+      } else {
+        await DishService.instance.createDish(dishData);
+      }
 
       if (mounted) {
         setState(() {
@@ -99,7 +136,11 @@ class _AddDishModalState extends State<AddDishModal> {
         // Success
         widget.onDishAdded();
         Navigator.of(context).pop();
-        _showSuccessSnackBar('Plat créé avec succès!');
+        _showSuccessSnackBar(
+          isEditing 
+            ? 'Plat modifié avec succès!' 
+            : 'Plat créé avec succès!'
+        );
       }
     } catch (e) {
       debugPrint('Error creating dish: $e');
@@ -198,21 +239,25 @@ class _AddDishModalState extends State<AddDishModal> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Ajouter un plat',
-                        style: TextStyle(
+                        widget.dishToEdit != null 
+                            ? 'Modifier le plat' 
+                            : 'Ajouter un plat',
+                        style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                           color: AppColors.textPrimary,
                         ),
                       ),
                       Text(
-                        'Remplissez les informations',
-                        style: TextStyle(
+                        widget.dishToEdit != null 
+                            ? 'Modifiez les informations' 
+                            : 'Remplissez les informations',
+                        style: const TextStyle(
                           fontSize: 14,
                           color: AppColors.textSecondary,
                         ),

@@ -9,11 +9,13 @@ import 'package:mobile_app_project/services/Restaurant/RestaurantService.dart';
 class AddRestaurantModal extends StatefulWidget {
   final int ownerId;
   final VoidCallback onRestaurantAdded;
+  final Map<String, dynamic>? restaurantToEdit;
 
   const AddRestaurantModal({
     Key? key,
     required this.ownerId,
     required this.onRestaurantAdded,
+    this.restaurantToEdit,
   }) : super(key: key);
 
   @override
@@ -85,6 +87,59 @@ class _AddRestaurantModalState extends State<AddRestaurantModal> {
   };
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.restaurantToEdit != null) {
+      _prePopulateForm();
+    }
+  }
+
+  void _prePopulateForm() {
+    final restaurant = widget.restaurantToEdit!;
+    
+    // Set name
+    _nameController.text = restaurant['name'] as String? ?? '';
+    
+    // Set address
+    _addressController.text = restaurant['adresse'] as String? ?? '';
+    
+    // Set phone (extract without dial code)
+    final phone = restaurant['phone'] as String? ?? '';
+    if (phone.isNotEmpty) {
+      // Remove dial code prefix if present
+      final phoneWithoutCode = phone.replaceFirst(RegExp(r'^\+\d+\s*'), '');
+      _phoneController.text = phoneWithoutCode;
+    }
+    
+    // Set cuisine and price range
+    _selectedCuisine = restaurant['cuisine'] as String? ?? 'Français';
+    _selectedPriceRange = restaurant['price_range'] as String? ?? '€€';
+    
+    // Set pictures
+    final pictures = restaurant['pictures'] as List<dynamic>? ?? [];
+    _selectedImages = pictures
+        .map((path) => XFile(path.toString()))
+        .toList();
+    
+    // Set work hours
+    final workTime = restaurant['work_time'] as List<dynamic>? ?? [];
+    for (var schedule in workTime) {
+      final day = schedule['day'] as String;
+      final isOpen = !(schedule['is_closed'] as bool? ?? true);
+      final openTime = schedule['open_time'] as String? ?? '09:00';
+      final closeTime = schedule['close_time'] as String? ?? '18:00';
+      
+      if (_workHours.containsKey(day)) {
+        _workHours[day] = {
+          'isOpen': isOpen,
+          'openTime': openTime,
+          'closeTime': closeTime,
+        };
+      }
+    }
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
@@ -128,7 +183,7 @@ class _AddRestaurantModalState extends State<AddRestaurantModal> {
         picturePaths.add(imageFile.path);
       }
 
-      // Create restaurant using local SQLite service
+      // Prepare restaurant data
       final restaurantData = {
         'name': _nameController.text.trim(),
         'phone': '${_selectedCountry.dialCode} ${_phoneController.text.trim()}',
@@ -140,7 +195,15 @@ class _AddRestaurantModalState extends State<AddRestaurantModal> {
         'price_range': _selectedPriceRange,
       };
 
-      await RestaurantService.instance.createRestaurant(restaurantData);
+      // Check if we're editing or creating
+      final isEditing = widget.restaurantToEdit != null;
+      
+      if (isEditing) {
+        final restaurantId = widget.restaurantToEdit!['id'] as int;
+        await RestaurantService.instance.updateRestaurant(restaurantId, restaurantData);
+      } else {
+        await RestaurantService.instance.createRestaurant(restaurantData);
+      }
 
       if (mounted) {
         setState(() {
@@ -150,7 +213,11 @@ class _AddRestaurantModalState extends State<AddRestaurantModal> {
         // Success
         widget.onRestaurantAdded();
         Navigator.of(context).pop();
-        _showSuccessSnackBar('Restaurant créé avec succès!');
+        _showSuccessSnackBar(
+          isEditing 
+            ? 'Restaurant modifié avec succès!' 
+            : 'Restaurant créé avec succès!'
+        );
       }
     } catch (e) {
       debugPrint('Error creating restaurant: $e');
@@ -249,21 +316,25 @@ class _AddRestaurantModalState extends State<AddRestaurantModal> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Nouveau restaurant',
-                        style: TextStyle(
+                        widget.restaurantToEdit != null 
+                            ? 'Modifier le restaurant' 
+                            : 'Nouveau restaurant',
+                        style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                           color: AppColors.textPrimary,
                         ),
                       ),
                       Text(
-                        'Remplissez les informations',
-                        style: TextStyle(
+                        widget.restaurantToEdit != null 
+                            ? 'Modifiez les informations' 
+                            : 'Remplissez les informations',
+                        style: const TextStyle(
                           fontSize: 14,
                           color: AppColors.textSecondary,
                         ),
