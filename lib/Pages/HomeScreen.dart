@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile_app_project/Pages/FilterSheet.dart';
 import 'package:mobile_app_project/Pages/RestaurantCard.dart';
 import 'package:mobile_app_project/Pages/UI/AppColors.dart';
+import 'package:mobile_app_project/Pages/UI/RestaurantsMapView.dart';
 import 'package:mobile_app_project/Pages/mock_data.dart';
 import 'package:mobile_app_project/services/Review/ReviewService.dart';
 import 'dart:convert';
@@ -95,6 +96,9 @@ class _HomeScreenState extends State<HomeScreen> {
           image: imageUrl,
           isOpen: true, // Default to open
           openUntil: '22:00',
+          address: data['adresse'] as String?,
+          latitude: data['latitude'] as double?,
+          longitude: data['longitude'] as double?,
         );
       }).toList();
 
@@ -505,114 +509,31 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildMapView() {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            AppColors.background,
-            AppColors.primaryOrange.withOpacity(0.05),
-          ],
-        ),
-      ),
-      child: Center(
-        child: Container(
-          margin: const EdgeInsets.all(32),
-          padding: const EdgeInsets.all(32),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primaryOrange.withOpacity(0.1),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: AppColors.gradientPrimary.scale(0.2),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Icon(
-                  Icons.map,
-                  size: 48,
-                  color: AppColors.primaryOrange,
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Vue Carte Interactive',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Intégration Google Maps / Mapbox',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: AppColors.textSecondary.withOpacity(0.8),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _buildLoadingDot(0),
-                  const SizedBox(width: 8),
-                  _buildLoadingDot(200),
-                  const SizedBox(width: 8),
-                  _buildLoadingDot(400),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
+    // Convert Restaurant objects to Maps for the RestaurantsMapView
+    final restaurantMaps = _restaurants.map((restaurant) {
+      return {
+        'id': restaurant.id,
+        'name': restaurant.name,
+        'adresse': restaurant.address,
+        'cuisine': restaurant.cuisine ?? 'Autre',
+        'price_range': restaurant.priceRange ?? '€€',
+        'latitude': restaurant.latitude,
+        'longitude': restaurant.longitude,
+      };
+    }).toList();
+
+    return RestaurantsMapView(
+      restaurants: restaurantMaps,
+      onRestaurantTap: (restaurantId) {
+        // Close map view and open restaurant detail
+        setState(() {
+          _showMap = false;
+        });
+        widget.onRestaurantClick(restaurantId);
+      },
     );
   }
 
-  Widget _buildLoadingDot(int delay) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.3, end: 1.0),
-      duration: const Duration(milliseconds: 600),
-      curve: Curves.easeInOut,
-      builder: (context, value, child) {
-        return Opacity(
-          opacity: value,
-          child: Container(
-            width: 12,
-            height: 12,
-            decoration: const BoxDecoration(
-              gradient: AppColors.gradientPrimary,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primaryOrange,
-                  blurRadius: 4,
-                  spreadRadius: 1,
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-      onEnd: () {
-        Future.delayed(Duration(milliseconds: delay), () {
-          if (mounted) setState(() {});
-        });
-      },
-    );
-  }
 
   Widget _buildRestaurantList() {
     if (_isLoading) {

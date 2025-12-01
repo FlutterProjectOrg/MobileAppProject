@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:mobile_app_project/Pages/UI/PhoneInputField.dart';
 import 'package:mobile_app_project/Pages/UI/AddressInputField.dart';
 import 'package:mobile_app_project/Pages/UI/AppColors.dart';
+import 'package:mobile_app_project/Pages/UI/MapLocationPicker.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:latlong2/latlong.dart';
 import 'dart:io';
 import 'package:mobile_app_project/services/Restaurant/RestaurantService.dart';
 
@@ -43,6 +45,10 @@ class _AddRestaurantModalState extends State<AddRestaurantModal> {
   String? _selectedState;
   String _selectedCuisine = 'Français';
   String _selectedPriceRange = '€€';
+  
+  // Location coordinates
+  double? _latitude;
+  double? _longitude;
 
   final List<String> _cuisineTypes = [
     'Français',
@@ -116,6 +122,10 @@ class _AddRestaurantModalState extends State<AddRestaurantModal> {
     // Set cuisine and price range
     _selectedCuisine = restaurant['cuisine'] as String? ?? 'Français';
     _selectedPriceRange = restaurant['price_range'] as String? ?? '€€';
+    
+    // Set location coordinates
+    _latitude = restaurant['latitude'] as double?;
+    _longitude = restaurant['longitude'] as double?;
     
     // Set pictures
     final pictures = restaurant['pictures'] as List<dynamic>? ?? [];
@@ -195,6 +205,8 @@ class _AddRestaurantModalState extends State<AddRestaurantModal> {
         'owner_id': widget.ownerId,
         'cuisine': _selectedCuisine,
         'price_range': _selectedPriceRange,
+        if (_latitude != null) 'latitude': _latitude,
+        if (_longitude != null) 'longitude': _longitude,
       };
 
       // Check if we're editing or creating
@@ -557,6 +569,110 @@ class _AddRestaurantModalState extends State<AddRestaurantModal> {
                           _selectedState = state;
                         });
                       },
+                    ),
+                    const SizedBox(height: 24),
+                    // Location Section
+                    const Text(
+                      'Emplacement sur la carte',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    GestureDetector(
+                      onTap: () async {
+                        final result = await showDialog<LatLng>(
+                          context: context,
+                          builder: (context) => MapLocationPicker(
+                            initialLocation: _latitude != null && _longitude != null
+                                ? LatLng(_latitude!, _longitude!)
+                                : null,
+                            onLocationSelected: (location) {
+                              // Location will be set when dialog closes
+                            },
+                          ),
+                        );
+                        
+                        if (result != null) {
+                          setState(() {
+                            _latitude = result.latitude;
+                            _longitude = result.longitude;
+                          });
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: _latitude != null && _longitude != null
+                              ? AppColors.primaryOrange.withOpacity(0.1)
+                              : Colors.grey[50],
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: _latitude != null && _longitude != null
+                                ? AppColors.primaryOrange
+                                : Colors.grey[300]!,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              _latitude != null && _longitude != null
+                                  ? Icons.location_on
+                                  : Icons.location_off,
+                              color: _latitude != null && _longitude != null
+                                  ? AppColors.primaryOrange
+                                  : Colors.grey[400],
+                              size: 24,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _latitude != null && _longitude != null
+                                        ? 'Emplacement sélectionné'
+                                        : 'Sélectionner sur la carte',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: _latitude != null && _longitude != null
+                                          ? AppColors.primaryOrange
+                                          : AppColors.textSecondary,
+                                    ),
+                                  ),
+                                  if (_latitude != null && _longitude != null) ...[
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Lat: ${_latitude!.toStringAsFixed(6)}, '
+                                      'Long: ${_longitude!.toStringAsFixed(6)}',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.grey[600],
+                                        fontFamily: 'monospace',
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                            Icon(
+                              Icons.chevron_right,
+                              color: Colors.grey[400],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Optionnel: Ajoutez l\'emplacement pour apparaître sur la carte',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
                     ),
                     const SizedBox(height: 24),
                     // Pictures Section

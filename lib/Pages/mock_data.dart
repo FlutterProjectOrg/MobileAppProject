@@ -11,6 +11,9 @@ class Restaurant {
   final String image;
   final bool isOpen;
   final String? openUntil;
+  final String? address;
+  final double? latitude;
+  final double? longitude;
 
   Restaurant({
     required this.id,
@@ -23,6 +26,9 @@ class Restaurant {
     required this.image,
     required this.isOpen,
     this.openUntil,
+    this.address,
+    this.latitude,
+    this.longitude,
   });
 }
 
